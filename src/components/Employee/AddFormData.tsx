@@ -138,13 +138,117 @@
 // export default AddFormData;
 
 
-import React from "react";
+import React, { useState } from 'react';
+import './AddFormData.css';
+ 
+const AddFormData= () => {
+  const [formData, setFormData] = useState({
+    childField: '-- Please Select --',
+    parentField: '',
+    district: '',
+    state: '-- Please Select --',
+    plotNo: ''
+  });
+ 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
+  };
+ 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-const NotFound = () => {
-  return <h1>404 - Page Not Found</h1>;
+  };
+ const onClose=()=>{
+  
+ }
+  return (
+    <div className="dealer-master-container">
+      <h1>Dealer Master</h1>
+     
+      <div className="form-container">
+        <div className="form-section">
+          <h2>Form Section</h2>
+         
+          <div className="form-tabs">
+            <div className="tab active">Dealer Detail</div>
+            <div className="tab">Daddress</div>
+          </div>
+         
+          <div className="form-fields">
+            <div className="field-row">
+              <div className="field-col">
+                <label>Child Field</label>
+                <select
+                  name="childField"
+                  value={formData.childField}
+                  onChange={handleChange}
+                >
+                  <option>-- Please Select --</option>
+                </select>
+              </div>
+             
+              <div className="field-col">
+                <label>Parent Field</label>
+                <input
+                  type="text"
+                  name="parentField"
+                  value={formData.parentField}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+           
+            <div className="field-row">
+              <div className="field-col">
+                <label>district</label>
+                <input
+                  type="text"
+                  name="district"
+                  value={formData.district}
+                  onChange={handleChange}
+                />
+              </div>
+             
+              <div className="field-col">
+                <label>state</label>
+                <select
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                >
+                  <option>-- Please Select --</option>
+                </select>
+              </div>
+            </div>
+           
+            <div className="field-row">
+              <div className="field-col full-width">
+                <label>plot no</label>
+                <input
+                  type="text"
+                  name="plotNo"
+                  value={formData.plotNo}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+           
+            <div className="button-group">
+              <button type="button" className="btn btn-save" onClick={onClose}>Close</button>
+              <button type="button" className="btn btn-save" onClick={handleSubmit}>Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
-
-export default NotFound;
+ 
+export default AddFormData;
 
 
 

@@ -50,8 +50,8 @@ function App() {
       <Routes>
         <Route path="/" element={<MaterialTableFormData />} />
         <Route path="/AddFormDataList" element={<MaterialTableADDFormDataList />} /> 
-        <Route path="/employee/index/id" element={<EIndex />} />
-        <Route path="/employee/addFormData/id" element={<AddFormData />} />
+        <Route path="/employee/index/:id" element={<EIndex />} />
+        <Route path="/employee/addFormData/:id" element={<AddFormData />} />
         
       </Routes>
     </Router>

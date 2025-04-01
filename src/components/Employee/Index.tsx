@@ -1,83 +1,347 @@
-// import React, { useState } from "react";
+import React, { useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { Modal, Button, Form } from "react-bootstrap";
+import { useLocation } from "react-router-dom";
 
+const EntityForm = () => {
 
-// const FormBuilder = () => {
+  const location = useLocation();
+  const model = location.state?.entityData; // Get the passed data
+  console.log(model);
+  
+  const [itemName, setitemName] = useState("");
+  // State to store form data
+  const [formData, setFormData] = useState({
+    fieldType: itemName,
+    fieldName: "",
+    fieldLabel: "",
+    isDependent: "0",
+    dependentField: "",
+    isRequired: "0",
+    defaultValue: "",
+  });
+  // Handle change for text inputs
+  const handleInputChange = (e: React.ChangeEvent<any>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const [showDependentField, setShowDependentField] = useState(false);
+  const [showDefaultValue, setShowDefaultValue] = useState(false);
+
  
+  // Handle dependent field dropdown change
+  const handleDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, isDependent: value }));
 
-//   return (
-//     <div className="container">
-//       <h1 className="text-center">Label</h1>
-//       <input id="EntityId" type="hidden" value="Id" />
+    // Show dependent field input if "Yes" is selected
+    setShowDependentField(value === "1");
+  };
 
-//       <div className="row border p-3 rounded">
-//         <div className="col-md-3">
-//           <h4>Draggable Items</h4>
-//           <ul className="list-group">
-//             <li className="list-group-item">String</li>
-//             <li className="list-group-item">Number</li>
-//             <li className="list-group-item">Dropdown</li>
-//           </ul>
+  // Handle required field dropdown change
+  const handleIsRequiredChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, isRequired: value }));
 
-//           <h4 className="mt-3">Form Sections</h4>
-//           <ul className="list-group">
-//             {sections.map((section) => (
-//               <li key={section.Id} className="list-group-item">{section.SectionName}</li>
-//             ))}
-//           </ul>
-//           <button className="btn btn-primary mt-2" onClick={() => setShowSectionModal(true)}>
-//             + Add Section
-//           </button>
-//         </div>
+    // Show default value input if "Yes" is selected
+    setShowDefaultValue(value === "1");
+  };
+  const [sections, setSections] = useState(model.formSections || []);
+  //const [attributes, setAttributes] = useState(model.Attributes || []);
+  const [sectionName, setSectionName] = useState("");
 
-//         <div className="col-md-9">
-//           <form>
-//             <div className="border p-3 rounded">
-//               {attributes.map((attr, index) => (
-//                 <div key={attr.Id} className="form-group mb-3">
-//                   <label>{attr.Label}</label>
-//                   <input type="text" className="form-control" readOnly />
-//                 </div>
-//               ))}
-//             </div>
+  const [showFieldModal, setShowFieldModal] = useState(false);
+  const [showSectionModal, setShowSectionModal] = useState(false);
+  const [attributes, setAttributes] = useState<{ id: number; label: string }[]>(
+    []
+  );
 
-//             <div className="text-center mt-3">
-//               <button type="button" className="btn btn-secondary mx-2">Close</button>
-//               <button type="button" className="btn btn-success">Save</button>
-//             </div>
-//           </form>
-//         </div>
-//       </div>
+  const handleDragStart = (event: React.DragEvent<HTMLLIElement>, item: string) => {
+    event.dataTransfer.setData("text/plain", item);
+    console.log("item", item);
+    setitemName(item)
+  };
 
-//       {/* Section Modal */}
-//       {showSectionModal && (
-//         <div className="modal show d-block" tabIndex="-1">
-//           <div className="modal-dialog">
-//             <div className="modal-content">
-//               <div className="modal-header">
-//                 <h5 className="modal-title">Add New Section</h5>
-//                 <button className="btn-close" onClick={() => setShowSectionModal(false)}></button>
-//               </div>
-//               <div className="modal-body">
-//                 <label className="form-label">Section Name</label>
-//                 <input className="form-control" value={newSection} onChange={(e) => setNewSection(e.target.value)} />
-//               </div>
-//               <div className="modal-footer">
-//                 <button className="btn btn-secondary" onClick={() => setShowSectionModal(false)}>Close</button>
-//                 <button className="btn btn-success" onClick={addSection}>Save</button>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
 
-// export default FormBuilder;
-import React from "react";
+    setShowFieldModal(true)
+    // const itemLabel = event.dataTransfer.getData("text/plain");
+    const itemLabel = formData.fieldLabel
+    setAttributes([...attributes, { id: attributes.length + 1, label: itemLabel }]);
+  };
 
-const NotFound = () => {
-  return <h1>404 - Page Not Found</h1>;
+  const getSection = (id: React.Key | null | undefined) => {
+    console.log("Fetching section with ID:", id);
+  };
+
+  const addSectionModel = () => {
+    setShowSectionModal(true);
+  };
+
+  const handleCloseFieldModal = () => setShowFieldModal(false);
+  const handleCloseSectionModal = () => setShowSectionModal(false);
+
+  const saveSection = async () => {
+    if (sectionName.trim() === "") return;
+    //setSections([...sections, { Id: sections.length + 1, SectionName: sectionName }]);
+    
+    try {
+      const response = await fetch(`https://localhost:7060/api/employee/SaveSection?screenId=${model.id}&sectionName=${sectionName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const result = await response.json();
+      console.log("Success:", result);
+    } catch (error) {
+      console.error("Error posting data:", error);
+    }
+    handleCloseSectionModal();
+  };
+  const saveField = () => {
+    console.log("Saving new field...", formData);
+    handleCloseFieldModal();
+  };
+
+  const saveForm = async () => {
+    const newField = {
+      fieldName: formData.fieldName,
+      fieldLabel: formData.fieldLabel,
+      fieldType: formData.fieldType,
+      isDependent: formData.isDependent,
+      isRequired: formData.isRequired,
+      defaultValue: formData.defaultValue || null,
+    };
+  
+    try {
+      const response = await fetch("https://localhost:7060/api/Home/Index", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newField),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const result = await response.json();
+      console.log("Success:", result);
+    } catch (error) {
+      console.error("Error posting data:", error);
+    }
+    handleCloseFieldModal();
+  };
+  
+  const cancelForm = () => {
+    console.log("Form cancelled");
+  };
+
+
+  return (
+    <>
+      <div className="container mt-4">
+        <h1 className="text-center">{model.label}</h1>
+        <input id="EntityId" type="hidden" value={model.id} />
+        <input id="EntityName" type="hidden" value={model.name} />
+        <input id="SectionId" type="hidden" value={model.sectionId} />
+
+        <div className="row border p-3 rounded" style={{ borderColor: "black" }}>
+          <div className="col-md-3">
+            <div className="row">
+              <div className="col-md-6">
+                <h4>Draggable Items</h4>
+                <ul className="list-group">
+                  {["String", "Number", "Dropdown"].map((item, index) => (
+                    <li
+                      key={index}
+                      className="list-group-item"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, item)}
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="col-md-6">
+                <h4>Form Section</h4>
+                <ul className="list-group">
+                  {/* {sections.map((section: { Id: React.Key | null | undefined; SectionName: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => (
+                    <li key={section.Id} className="list-group-item" onClick={() => getSection(section.Id)}>
+                      {section.SectionName}
+                    </li>
+                  ))} */}
+                </ul>
+                <ul className="list-group mt-2">
+                  <li className="list-group-item" onClick={addSectionModel}>+ Add Section</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-9">
+            <form>
+              <div className="border p-3 rounded" style={{ borderColor: "red", minHeight: "50px" }}>
+              
+                {/* Drop Area */}
+                <div
+                  style={{ borderColor: "red", minHeight: "100px" }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleDrop}
+                >
+                  <h4>Drop Items Here</h4>
+                  {attributes.map((attr) => (
+                    <div key={attr.id} className="row mb-2">
+                      <div className="col-md-6">
+                        <label>{attr.label}</label>
+                        <input type="text" className="form-control" readOnly />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="text-center mt-3">
+                <button type="button" className="btn btn-secondary me-2" onClick={cancelForm}>
+                  Close
+                </button>
+                <button type="button" className="btn btn-success" onClick={saveForm}>
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Add New Field Modal */}
+      <Modal show={showFieldModal} onHide={handleCloseFieldModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Field</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-2">
+              <Form.Label>Field Type</Form.Label>
+              <Form.Control
+                type="text"
+                name="fieldType"
+                value={itemName}
+                disabled
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Field Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="fieldName"
+                value={formData.fieldName}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Field Label</Form.Label>
+              <Form.Control
+                type="text"
+                name="fieldLabel"
+                value={formData.fieldLabel}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Is Dependent Field</Form.Label>
+              <select
+                className="form-control"
+                name="isDependent"
+                value={formData.isDependent}
+                onChange={handleDropdownChange}
+              >
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+              {showDependentField && (
+                <div className="mb-2">
+                  <label className="form-label">Dependent Field</label>
+                  <select
+                    className="form-control"
+                    name="dependentField"
+                    value={formData.dependentField}
+                    onChange={handleInputChange}
+                  >
+                    <option value="child">Child field</option>
+                    <option value="parent">Parent field</option>
+                  </select>
+                </div>
+              )}
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Required Field</Form.Label>
+              <select
+                className="form-control"
+                name="isRequired"
+                value={formData.isRequired}
+                onChange={handleIsRequiredChange}
+              >
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+              {showDefaultValue && (
+                <div className="mb-2">
+                  <label className="form-label">Default Value</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="defaultValue"
+                    value={formData.defaultValue}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              )}
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseFieldModal}>Close</Button>
+          <Button variant="success" onClick={saveField}>Save</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Add New Section Modal */}
+      <Modal show={showSectionModal} onHide={handleCloseSectionModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Section</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-2">
+              <Form.Label>Screen Name</Form.Label>
+              {/* <Form.Control type="text" value={model.Label} disabled /> */}
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Section Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={sectionName}
+                onChange={(e) => setSectionName(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseSectionModal}>Close</Button>
+          <Button variant="success" onClick={saveSection}>Save</Button>
+        </Modal.Footer>
+      </Modal>
+    </>
+  );
 };
 
-export default NotFound;
+export default EntityForm;

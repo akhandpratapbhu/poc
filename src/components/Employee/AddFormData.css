@@ -1,0 +1,100 @@
+.dealer-master-container {
+    font-family: Arial, sans-serif;
+    max-width: 100%;
+    margin: 0;
+    padding: 20px;
+  }
+ 
+  h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #333;
+  }
+ 
+  .form-container {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+  }
+ 
+  .form-section h2 {
+    font-size: 18px;
+    margin: 0;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+  }
+ 
+  .form-tabs {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+  }
+ 
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    border-right: 1px solid #ddd;
+  }
+ 
+  .tab.active {
+    background-color: #f5f5f5;
+    border-bottom: 2px solid #007bff;
+    color: #007bff;
+  }
+ 
+  .form-fields {
+    padding: 20px;
+  }
+ 
+  .field-row {
+    display: flex;
+    margin-bottom: 20px;
+    gap: 20px;
+  }
+ 
+  .field-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+ 
+  .field-col.full-width {
+    flex: 2;
+  }
+ 
+  label {
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #444;
+  }
+ 
+  input, select {
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+  }
+ 
+  .button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+ 
+  .btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    color: white;
+  }
+ 
+  .btn-close {
+    background-color: #007bff;
+  }
+ 
+  .btn-save {
+    background-color: #007bff;
+  }
