@@ -139,55 +139,12 @@
 
 
 import React from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from "@mui/material";
 
-const users = [
-  { id: 1, name: "DealerMaster", IsActive: "Active" },
-  { id: 2, name: "VehicleMaster", IsActive: "Inactive" },
-  { id: 3, name: "VendorMaster", IsActive: "Active" },
-  { id: 4, name: "EmployeeMaster", IsActive: "Inactive" },
-  { id: 5, name: "ChassisMaster", IsActive: "Active" },
-  { id: 6, name: "CustomerMaster", IsActive: "Inactive" },
-];
-
-const MaterialTableADDFormData = () => {
-  return (
-    <TableContainer component={Paper} sx={{ maxWidth: 900, margin: "auto",marginTop:4 }}>
-      <Table>
-        <TableHead>
-          <TableRow sx={{ backgroundColor: "#333", color: "white" }}>
-            <TableCell sx={{ color: "white" }}>ID</TableCell>
-            <TableCell sx={{ color: "white" }}>Name</TableCell>
-            <TableCell sx={{ color: "white" }}>Status</TableCell>
-            <TableCell sx={{ color: "white" }}>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.id}</TableCell>
-              <TableCell>{user.name}</TableCell>
-              <TableCell>{user.IsActive}</TableCell>
-              <TableCell>
-                <Button
-                  variant="contained"
-                  sx={{ backgroundColor: "green", color: "white", marginRight: 1 }}
-                >
-                  ADD DATA
-                </Button>
-               
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+const NotFound = () => {
+  return <h1>404 - Page Not Found</h1>;
 };
 
-export default MaterialTableADDFormData;
-
-
+export default NotFound;
 
 
 

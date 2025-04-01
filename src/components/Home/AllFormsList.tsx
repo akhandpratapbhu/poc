@@ -48,8 +48,11 @@
 // };
 
 // export default EntityTable;
+
+
 import React from "react";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const users = [
   { id: 1, name: "DealerMaster", IsActive: "Active" },
@@ -60,7 +63,12 @@ const users = [
   { id: 6, name: "CustomerMaster", IsActive: "Inactive" },
 ];
 
-const MaterialTableFormData = () => {
+const MaterialTableADDFormDataList = () => {
+    const navigate = useNavigate();
+
+      const addData = (id:number) => {
+        navigate(`/employee/addFormData/${id}`);
+      };
   return (
     <TableContainer component={Paper} sx={{ maxWidth: 900, margin: "auto",marginTop:4 }}>
       <Table>
@@ -82,15 +90,11 @@ const MaterialTableFormData = () => {
                 <Button
                   variant="contained"
                   sx={{ backgroundColor: "green", color: "white", marginRight: 1 }}
+                  onClick={() => addData(user.id)}
                 >
-                  EDIT
+                  ADD DATA
                 </Button>
-                <Button
-                  variant="contained"
-                  sx={{ backgroundColor: "red", color: "white" }}
-                >
-                  DEACTIVATE
-                </Button>
+               
               </TableCell>
             </TableRow>
           ))}
@@ -100,7 +104,7 @@ const MaterialTableFormData = () => {
   );
 };
 
-export default MaterialTableFormData;
+export default MaterialTableADDFormDataList;
 
 
 

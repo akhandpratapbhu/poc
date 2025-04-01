@@ -35,11 +35,11 @@
 // export default App
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import MaterialTableFormData from "../src/components/Home/AllForms";
-import Index from "../src/components/Home/Index";
+import MaterialTableADDFormDataList from "./components/Home/AllFormsList";
+import MaterialTableFormData from "../src/components/Home/Index";
 import Navbar from "../src/components/Home/Navbar";
 import EIndex from "../src/components/Employee/Index";
-import MaterialTableADDFormData from "../src/components/Employee/AddFormData";
+import AddFormData from "../src/components/Employee/AddFormData";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 
@@ -49,9 +49,10 @@ function App() {
       <Navbar /> {/* Navigation Bar */}
       <Routes>
         <Route path="/" element={<MaterialTableFormData />} />
-        <Route path="/Index" element={<Index />} />
-        <Route path="/contact" element={<EIndex />} />
-        <Route path="/AddFormData" element={<MaterialTableADDFormData />} /> {/* Catch-all for 404 */}
+        <Route path="/AddFormDataList" element={<MaterialTableADDFormDataList />} /> 
+        <Route path="/employee/index/id" element={<EIndex />} />
+        <Route path="/employee/addFormData/id" element={<AddFormData />} />
+        
       </Routes>
     </Router>
   );

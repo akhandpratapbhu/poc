@@ -27,7 +27,7 @@ const Navbar = () => {
               <Link className="nav-link" to="/about">Privacy</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/AddFormData">Add-Form Data</Link>
+              <Link className="nav-link" to="/AddFormDataList">Add-Form Data</Link>
             </li>
           </ul>
         </div>
