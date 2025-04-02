@@ -15,19 +15,19 @@ const EntityForm = () => {
 
   const location = useLocation();
   const model = location.state?.entityData; // Get the passed data
-  console.log(model);
+ // console.log(model);
   const [sections, setSections] = useState([]);
-  useEffect(() => {
-    fetch(`https://localhost:7060/api/employee/GetSections?screenId=${model.id}`)
-      .then((response) => response.json())
-      .then((data) => setSections(data)) 
-      .catch((error) => console.error("Error fetching entities:", error));
-  }, []);
+  // useEffect(() => {
+  //   fetch(`https://localhost:7060/api/employee/GetSections?screenId=${model.id}`)
+  //     .then((response) => response.json())
+  //     .then((data) => setSections(data)) 
+  //     .catch((error) => console.error("Error fetching entities:", error));
+  // }, []);
 
   const [itemName, setitemName] = useState("");
   // State to store form data
   const [formData, setFormData] = useState({
-    fieldType: itemName,
+    fieldType: "",
     fieldName: "",
     fieldLabel: "",
     isDependent: "0",
@@ -81,9 +81,7 @@ const EntityForm = () => {
     event.preventDefault();
 
     setShowFieldModal(true)
-    // const itemLabel = event.dataTransfer.getData("text/plain");
-    const itemLabel = formData.fieldLabel
-    setAttributes([...attributes, { id: attributes.length + 1, label: itemLabel }]);
+    
   };
   const [attributesofPartialFormData, setAttributesofPartialFormData] = useState<AttributeofPartialFormData[]>([]);
   const getSection = async (sId: React.Key | null | undefined) => {
@@ -114,7 +112,18 @@ const EntityForm = () => {
     setShowSectionModal(true);
   };
 
-  const handleCloseFieldModal = () => setShowFieldModal(false);
+  const handleCloseFieldModal = () => {
+    setShowFieldModal(false)
+    setFormData({
+    fieldType: "",
+    fieldName: "",
+    fieldLabel: "",
+    isDependent: "0",
+    dependentField: "",
+    isRequired: "0",
+    defaultValue: "",
+    })
+  };
   const handleCloseSectionModal = () => setShowSectionModal(false);
 
   const saveSection = async () => {
@@ -143,8 +152,14 @@ const EntityForm = () => {
   const saveField = () => {
     console.log("Saving new field...", formData);
 
+    setAttributes(prevAttributes => {
+        const updatedAttributes = [...prevAttributes, { id: prevAttributes.length + 1, label: formData.fieldLabel }];
+        console.log("Saving all attributes...", updatedAttributes); // Logs the correct updated state
+        return updatedAttributes;
+    });
+
     handleCloseFieldModal();
-  };
+};
 
   const saveForm = async () => {
     const newField = {
@@ -185,10 +200,10 @@ const EntityForm = () => {
   return (
     <>
       <div className="container mt-4">
-        <h1 className="text-center">{model.label}</h1>
+        {/* <h1 className="text-center">{model.label}</h1>
         <input id="EntityId" type="hidden" value={model.id} />
         <input id="EntityName" type="hidden" value={model.name} />
-        <input id="SectionId" type="hidden" value={model.sectionId} />
+        <input id="SectionId" type="hidden" value={model.sectionId} /> */}
 
         <div className="row border p-3 rounded" style={{ borderColor: "black" }}>
           <div className="col-md-3">
