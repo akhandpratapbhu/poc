@@ -1,14 +1,29 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Button, Form } from "react-bootstrap";
 import { useLocation } from "react-router-dom";
+import PartialForm from "./PartialForm";
 
+interface AttributeofPartialFormData {
+  id: string | number;
+  name: string;
+  dataType: string;
+  isRequired: boolean | number;
+  label: string;
+}
 const EntityForm = () => {
 
   const location = useLocation();
   const model = location.state?.entityData; // Get the passed data
   console.log(model);
-  
+  const [sections, setSections] = useState([]);
+  useEffect(() => {
+    fetch(`https://localhost:7060/api/employee/GetSections?screenId=${model.id}`)
+      .then((response) => response.json())
+      .then((data) => setSections(data)) 
+      .catch((error) => console.error("Error fetching entities:", error));
+  }, []);
+
   const [itemName, setitemName] = useState("");
   // State to store form data
   const [formData, setFormData] = useState({
@@ -29,7 +44,7 @@ const EntityForm = () => {
   const [showDependentField, setShowDependentField] = useState(false);
   const [showDefaultValue, setShowDefaultValue] = useState(false);
 
- 
+
   // Handle dependent field dropdown change
   const handleDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
@@ -47,7 +62,6 @@ const EntityForm = () => {
     // Show default value input if "Yes" is selected
     setShowDefaultValue(value === "1");
   };
-  const [sections, setSections] = useState(model.formSections || []);
   //const [attributes, setAttributes] = useState(model.Attributes || []);
   const [sectionName, setSectionName] = useState("");
 
@@ -71,10 +85,30 @@ const EntityForm = () => {
     const itemLabel = formData.fieldLabel
     setAttributes([...attributes, { id: attributes.length + 1, label: itemLabel }]);
   };
+  const [attributesofPartialFormData, setAttributesofPartialFormData] = useState<AttributeofPartialFormData[]>([]);
+  const getSection = async (sId: React.Key | null | undefined) => {
+    console.log("Fetching section with ID:", sId);
 
-  const getSection = (id: React.Key | null | undefined) => {
-    console.log("Fetching section with ID:", id);
-  };
+    try {
+      const response = await fetch(`https://localhost:7060/api/employee/PartialForm?entityId=${model.id}&sId=${sId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const PartialFormData = await response.json();  // Convert response to JSON
+      setAttributesofPartialFormData(PartialFormData)
+      console.log("PartialForm:", PartialFormData);
+    } catch (error) {
+      console.error("Error posting data:", error);
+    }
+  }
+
 
   const addSectionModel = () => {
     setShowSectionModal(true);
@@ -86,7 +120,7 @@ const EntityForm = () => {
   const saveSection = async () => {
     if (sectionName.trim() === "") return;
     //setSections([...sections, { Id: sections.length + 1, SectionName: sectionName }]);
-    
+
     try {
       const response = await fetch(`https://localhost:7060/api/employee/SaveSection?screenId=${model.id}&sectionName=${sectionName}`, {
         method: "POST",
@@ -94,11 +128,11 @@ const EntityForm = () => {
           "Content-Type": "application/json",
         },
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
+
       const result = await response.json();
       console.log("Success:", result);
     } catch (error) {
@@ -108,6 +142,7 @@ const EntityForm = () => {
   };
   const saveField = () => {
     console.log("Saving new field...", formData);
+
     handleCloseFieldModal();
   };
 
@@ -120,7 +155,7 @@ const EntityForm = () => {
       isRequired: formData.isRequired,
       defaultValue: formData.defaultValue || null,
     };
-  
+
     try {
       const response = await fetch("https://localhost:7060/api/Home/Index", {
         method: "POST",
@@ -129,11 +164,11 @@ const EntityForm = () => {
         },
         body: JSON.stringify(newField),
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
+
       const result = await response.json();
       console.log("Success:", result);
     } catch (error) {
@@ -141,7 +176,7 @@ const EntityForm = () => {
     }
     handleCloseFieldModal();
   };
-  
+
   const cancelForm = () => {
     console.log("Form cancelled");
   };
@@ -176,11 +211,15 @@ const EntityForm = () => {
               <div className="col-md-6">
                 <h4>Form Section</h4>
                 <ul className="list-group">
-                  {/* {sections.map((section: { Id: React.Key | null | undefined; SectionName: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => (
-                    <li key={section.Id} className="list-group-item" onClick={() => getSection(section.Id)}>
-                      {section.SectionName}
-                    </li>
-                  ))} */}
+                  {sections.map((section: { id: React.Key | null | undefined; sectionName: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => (
+                    // <li key={section.id} className="list-group-item" onClick={() => getSection(section.id)}>
+                    //   {section.sectionName}
+                    // </li>
+                    <div>
+                      <button onClick={() => getSection(section.id)}> {section.sectionName}</button>
+                      {/* <PartialForm attributes={attributesofPartialFormData} /> */}
+                    </div>
+                  ))}
                 </ul>
                 <ul className="list-group mt-2">
                   <li className="list-group-item" onClick={addSectionModel}>+ Add Section</li>
@@ -191,7 +230,7 @@ const EntityForm = () => {
           <div className="col-md-9">
             <form>
               <div className="border p-3 rounded" style={{ borderColor: "red", minHeight: "50px" }}>
-              
+                <PartialForm attributes={attributesofPartialFormData} />
                 {/* Drop Area */}
                 <div
                   style={{ borderColor: "red", minHeight: "100px" }}

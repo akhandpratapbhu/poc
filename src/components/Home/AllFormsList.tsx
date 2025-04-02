@@ -33,8 +33,11 @@ const MaterialTableFormData = () => {
 
   console.log(entities);
 
-  const addData = (id:number) => {
-            navigate(`/employee/addFormData/${id}`);
+  // const addData = (id:number) => {
+  //           navigate(`/employee/addFormData/${id}`);
+  //         };
+          const addData = (entity: any) => {
+            navigate(`/employee/addFormData/${entity.id}`, { state: { entityData: entity } });
           };
   const handleStatusChange = (id: number) => {
     fetch(`/api/changeStatus/${id}`, { method: "POST" })
@@ -73,7 +76,7 @@ const MaterialTableFormData = () => {
               <Button
                   variant="contained"
                   sx={{ backgroundColor: "green", color: "white", marginRight: 1 }}
-                  onClick={() => addData(entity.id)}
+                  onClick={() => addData(entity)}
                 >
                   ADD DATA
                 </Button>
