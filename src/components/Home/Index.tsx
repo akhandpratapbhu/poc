@@ -27,7 +27,7 @@ const MaterialTableFormData = () => {
   useEffect(() => {
     fetch("https://localhost:7060/api/Home/Index")
       .then((response) => response.json())
-      .then((data) => setEntities(data)) // ✅ Now TypeScript knows the structure of 'data'
+      .then((data) => setEntities(data)) 
       .catch((error) => console.error("Error fetching entities:", error));
   }, []);
 

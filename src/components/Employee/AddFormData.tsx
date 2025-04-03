@@ -150,24 +150,29 @@ type Section = {
   sortOrder: number;
 };
 interface AttributeofPartialFormData {
-  id: string | number;
+  id: string |undefined;
   name: string;
   dataType: string;
   isRequired: boolean | number;
   label: string;
 }
+
+interface Attribute {
+  id: string | number;
+  name: string;
+  dataType: string;
+  isRequired: boolean;
+  label: string;
+}
+
+interface Props {
+  attributesofPartialFormData: Attribute[];
+}
 const AddFormData = () => {
-  const [formData, setFormData] = useState({
-    childField: '-- Please Select --',
-    parentField: '',
-    district: '',
-    state: '-- Please Select --',
-    plotNo: ''
-  });
+
   const [sections, setSections] = useState<Section[]>([]);
   const location = useLocation();
   const model = location.state?.entityData; // Get the passed data
-  console.log(model);
   useEffect(() => {
     fetch(`https://localhost:7060/api/employee/GetSections?screenId=${model.id}`)
       .then((response) => response.json())
@@ -175,45 +180,121 @@ const AddFormData = () => {
       .catch((error) => console.error("Error fetching entities:", error));
   }, []);
   const [activeTab, setActiveTab] = useState<number>(sections[0]?.id);
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
+
+  const [currentSection, setCurrentSection] = useState(0);
+
+  const handleNext = () => {
+    if (currentSection < sections.length - 1) {
+      const nextSectionId = sections[currentSection + 1].id;
+      setCurrentSection(currentSection + 1);
+      getSection(nextSectionId); // Fetch and update data for the next tab
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // onSave(formData);
-  };
-  console.log(sections)
+
 
   const [attributesofPartialFormData, setAttributesofPartialFormData] = useState<AttributeofPartialFormData[]>([]);
 
+
+  useEffect(() => {
+    if (sections.length > 0) {
+      setActiveTab(sections[0].id);
+      getSection(sections[0].id);
+    }
+  }, [sections]); // Runs when `sections` are updated
+
   const getSection = async (sId: number) => {
-    console.log("Fetching section with ID:", sId);
-    setActiveTab(sId)
+    setActiveTab(sId);
     try {
-      const response = await fetch(`https://localhost:7060/api/employee/PartialForm?entityId=${model.id}&sId=${sId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `https://localhost:7060/api/employee/PartialForm?entityId=${model.id}&sId=${sId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const PartialFormData = await response.json();  // Convert response to JSON
-      setAttributesofPartialFormData(PartialFormData)
-      console.log("PartialForm:", PartialFormData);
+      const PartialFormData = await response.json();
+      setAttributesofPartialFormData(PartialFormData);
     } catch (error) {
       console.error("Error posting data:", error);
     }
-  }
+  };
+  const [formData, setFormData] = useState<Record<string, {name:string; value: string; options?: any[] }>>({});
+const[allfielddata,setallfielddata]=useState<{name:string; value: string}[]>([])
 
+  const handleChange = (
+    e: React.ChangeEvent<HTMLSelectElement> | React.ChangeEvent<HTMLInputElement>, 
+    attr: AttributeofPartialFormData
+  ) => {
+    const { value } = e.target;
+    if (!attr.id) return; // ✅ Prevent undefined key
+  
+    console.log(attr.name, value); // ✅ Logs only name and value
+  
+    setFormData((prev) => ({
+      ...prev,
+      [String(attr.id)]: { name: attr.name, value }, // ✅ Correct structure
+    }));
+    // Handle dependent dropdowns
+    // if (attr.parentOf) {
+    //   attr.parentOf.split(",").forEach((depId) => {
+    //     const dependentField = entity.attributes.find((a) => String(a.id) === String(depId));
+    //     if (dependentField?.dataType.toLowerCase() === "dropdown") {
+    //       fetchDropdownOptions(dependentField);
+    //     }
+    //   });
+    // }
+    const handleAddField = (attrId: string) => {
+      setallfielddata((prev) => [
+        ...prev,
+        { 
+          name: formData[attrId]?.name || "", 
+          value: formData[attrId]?.value || "" 
+        }
+      ]);
+    };
+  };
+
+  
+  
+
+  const handleSubmit = async () => {
+    const formattedData = attributesofPartialFormData.map((attr) => ({
+      name: attr.name,
+      value: formData[String(attr.id)]?.value || "",
+    }));
+  console.log("allfielddata",allfielddata);
+  console.log("formData",formData);
+    try {
+      const response = await fetch("https://localhost:7060/api/employee/InsertFormData", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({  // ✅ Correctly stringifying the body
+          id: model.id,       // ✅ Ensure these are included if needed
+          formName: model.name,
+          fieldsDataModel: allfielddata,
+        }),
+      });
+  
+      if (!response.ok) throw new Error("Failed to submit form");
+  
+      alert("Form submitted successfully!");
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error submitting form", error);
+      alert("Error submitting form. Please try again.");
+    }
+  };
+  
   return (
     <div className="dealer-master-container">
       <h1>{model.name}</h1>
@@ -235,59 +316,52 @@ const AddFormData = () => {
             ))}
           </div>
           <div className="form-fields">
-            <PartialForm attributes={attributesofPartialFormData} />
-
+            {/* <PartialForm attributes={attributesofPartialFormData} /> */}
+            <div className="col-md-10">
+            <div className="tab-content">
+    {attributesofPartialFormData.map((attr) => (
+      <div key={attr.id} className="form-group">
+        <label>{attr.label}</label>
+        {attr.dataType.toLowerCase() === "dropdown" ? (
+          <select
+            className="form-control"
+            value={formData[String(attr.id)]?.value || ""}
+            onChange={(e) => handleChange(e, attr)}
+          >
+            <option value="">-- Please Select --</option>
+            {(formData[String(attr.id)]?.options ?? []).map((option) => (
+              <option key={option.keyField} value={option.keyField}>
+                {option.valueField}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type={attr.dataType.toLowerCase() === "int" ? "number" : "text"}
+            className="form-control"
+            value={formData[String(attr.id)]?.value || ""}
+            onChange={(e) => handleChange(e, attr)}
+          />
+        )}
+      </div>
+    ))}
+  </div>
+            
+          </div>
           </div>
 
           {/* Tab Content */}
-          {/* <div className="form-fields">
-            {(activeTab === "All" || activeTab === "Dealer Detail" || activeTab === "Daddress") && (
-              <>
-                <div className="field-row">
-                  <div className="field-col">
-                    <label>Child Field</label>
-                    <select name="childField" value={formData.childField} onChange={handleChange}>
-                      <option>-- Please Select --</option>
-                    </select>
-                  </div>
 
-                  <div className="field-col">
-                    <label>Parent Field</label>
-                    <input type="text" name="parentField" value={formData.parentField} onChange={handleChange} />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {(activeTab === "All" || activeTab === "Daddress") && (
-              <>
-                <div className="field-row">
-                  <div className="field-col">
-                    <label>District</label>
-                    <input type="text" name="district" value={formData.district} onChange={handleChange} />
-                  </div>
-
-                  <div className="field-col">
-                    <label>State</label>
-                    <select name="state" value={formData.state} onChange={handleChange}>
-                      <option>-- Please Select --</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="field-row">
-                  <div className="field-col full-width">
-                    <label>Plot No</label>
-                    <input type="text" name="plotNo" value={formData.plotNo} onChange={handleChange} />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Buttons */}
           <div className="button-group">
-            {/* //<button type="button" className="btn btn-save" onClick={onClose}>Close</button> */}
-            <button type="button" className="btn btn-save" onClick={handleSubmit}>Save</button>
+            {currentSection < sections.length - 1 ? (
+              <button type="button" className="btn btn-primary" onClick={handleNext}>
+                Next
+              </button>
+            ) : (
+              <button type="button" className="btn btn-save" onClick={handleSubmit}>
+                Save
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Button, Form } from "react-bootstrap";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import PartialForm from "./PartialForm";
 
 interface AttributeofPartialFormData {
@@ -11,33 +11,65 @@ interface AttributeofPartialFormData {
   isRequired: boolean | number;
   label: string;
 }
+
 const EntityForm = () => {
 
   const location = useLocation();
+  const navigate = useNavigate();
   const model = location.state?.entityData; // Get the passed data
- // console.log(model);
+  console.log(typeof (model.id));
   const [sections, setSections] = useState([]);
-  // useEffect(() => {
-  //   fetch(`https://localhost:7060/api/employee/GetSections?screenId=${model.id}`)
-  //     .then((response) => response.json())
-  //     .then((data) => setSections(data)) 
-  //     .catch((error) => console.error("Error fetching entities:", error));
-  // }, []);
-
+  const [masters, setMasters] = useState([]);
+  useEffect(() => {
+    getSectionAllData();
+    getAllMasterData();
+  }, []);
+  function getSectionAllData() {
+    fetch(`https://localhost:7060/api/employee/GetSections?screenId=${model.id}`)
+      .then((response) => response.json())
+      .then((data) => setSections(data))
+      .catch((error) => console.error("Error fetching entities:", error));
+  }
+  function getAllMasterData() {
+    fetch(`https://localhost:7060/api/Home/GetMasters`)
+      .then((response) => response.json())
+      .then((data) => setMasters(data))
+      .catch((error) => console.error("Error fetching entities:", error));
+  }
   const [itemName, setitemName] = useState("");
   // State to store form data
   const [formData, setFormData] = useState({
     fieldType: "",
     fieldName: "",
     fieldLabel: "",
-    isDependent: "0",
+    isDependent: false,
     dependentField: "",
-    isRequired: "0",
+    isRequired: false,
     defaultValue: "",
+    mastersource: "",
+    valuefield: ""
   });
+  const [getAttributeData, setGetAttributeData] = useState([]);
+  function getAttribute(master:any){
+    console.log(master.id);
+    
+    fetch(`https://localhost:7060/api/employee/GetAttributes?masterId=${master.id}`)
+    .then((response) => response.json())
+    .then((data) => setGetAttributeData(data))
+    .catch((error) => console.error("Error fetching entities:", error));
+  }
   // Handle change for text inputs
   const handleInputChange = (e: React.ChangeEvent<any>) => {
-    const { name, value } = e.target;
+    const { name, value} = e.target;
+    console.log(e.target);
+    const selectedMaster = masters.find((master:{id:number;name:string}) => master.name === value);
+    console.log(selectedMaster);
+    if (name === "mastersource" && selectedMaster) {
+      getAttribute(selectedMaster);
+    }
+  
+
+  
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -47,20 +79,20 @@ const EntityForm = () => {
 
   // Handle dependent field dropdown change
   const handleDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+    const value = e.target.value === "Yes"; // Convert to boolean
     setFormData((prev) => ({ ...prev, isDependent: value }));
 
     // Show dependent field input if "Yes" is selected
-    setShowDependentField(value === "1");
+    setShowDependentField(value);
   };
 
   // Handle required field dropdown change
   const handleIsRequiredChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+    const value = e.target.value === "1"; // Convert to boolean
     setFormData((prev) => ({ ...prev, isRequired: value }));
 
     // Show default value input if "Yes" is selected
-    setShowDefaultValue(value === "1");
+    setShowDefaultValue(value);
   };
   //const [attributes, setAttributes] = useState(model.Attributes || []);
   const [sectionName, setSectionName] = useState("");
@@ -71,22 +103,50 @@ const EntityForm = () => {
     []
   );
 
+  const [fieldAllAttributes, setFieldAllAttributes] = useState<
+    {
+      id: number;
+      label: string;
+      name: string;
+      datatype: string;
+      mastersource: string;
+      valuefield: string;
+      isrequired: boolean;
+      defaultvalue: string;
+      isdependent: boolean;
+      dependentfield: string;
+      sortOrder: number;
+    }[]
+  >([]);
+
+
   const handleDragStart = (event: React.DragEvent<HTMLLIElement>, item: string) => {
     event.dataTransfer.setData("text/plain", item);
     console.log("item", item);
     setitemName(item)
+    setFormData((prev) => ({
+      ...prev, // Preserve existing state
+      fieldType: item, // Update only fieldType
+    }));
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
 
     setShowFieldModal(true)
-    
+
   };
+  const [activeSectionId, setActiveSectionId] = useState<null | undefined | number>(null);
+
   const [attributesofPartialFormData, setAttributesofPartialFormData] = useState<AttributeofPartialFormData[]>([]);
   const getSection = async (sId: React.Key | null | undefined) => {
     console.log("Fetching section with ID:", sId);
-
+    setActiveSectionId((prev) => {
+      const newId = sId as number;
+      console.log("Previous activeSectionId:", prev);
+      console.log("New activeSectionId:", newId);
+      return newId;
+    });
     try {
       const response = await fetch(`https://localhost:7060/api/employee/PartialForm?entityId=${model.id}&sId=${sId}`, {
         method: "POST",
@@ -107,7 +167,7 @@ const EntityForm = () => {
     }
   }
 
-
+  console.log("activeSectionId:", activeSectionId);
   const addSectionModel = () => {
     setShowSectionModal(true);
   };
@@ -115,13 +175,15 @@ const EntityForm = () => {
   const handleCloseFieldModal = () => {
     setShowFieldModal(false)
     setFormData({
-    fieldType: "",
-    fieldName: "",
-    fieldLabel: "",
-    isDependent: "0",
-    dependentField: "",
-    isRequired: "0",
-    defaultValue: "",
+      fieldType: "",
+      fieldName: "",
+      fieldLabel: "",
+      isDependent: false,
+      dependentField: "",
+      isRequired: false,
+      defaultValue: "",
+      mastersource: "",
+      valuefield: ""
     })
   };
   const handleCloseSectionModal = () => setShowSectionModal(false);
@@ -144,35 +206,57 @@ const EntityForm = () => {
 
       const result = await response.json();
       console.log("Success:", result);
+      // Update sections state to trigger useEffect
+      getSectionAllData()
     } catch (error) {
       console.error("Error posting data:", error);
     }
     handleCloseSectionModal();
   };
+
   const saveField = () => {
     console.log("Saving new field...", formData);
 
-    setAttributes(prevAttributes => {
-        const updatedAttributes = [...prevAttributes, { id: prevAttributes.length + 1, label: formData.fieldLabel }];
-        console.log("Saving all attributes...", updatedAttributes); // Logs the correct updated state
-        return updatedAttributes;
+    setFieldAllAttributes((prevAttributes) => {
+      const updatedFieldAllAttributes = [
+        ...prevAttributes,
+        {
+          id: prevAttributes.length + 1,
+          label: formData.fieldLabel,
+          name: formData.fieldName,
+          datatype: formData.fieldType,
+          mastersource: formData.mastersource,
+          valuefield: formData.valuefield,
+          isrequired: formData.isRequired,
+          defaultvalue: formData.defaultValue,
+          isdependent: formData.isDependent,
+          dependentfield: formData.dependentField,
+          sortOrder: prevAttributes.length + 1,
+        },
+      ];
+      console.log("Saving all attributes...", updatedFieldAllAttributes); // Logs correct updated state
+      return updatedFieldAllAttributes;
     });
 
+
+    setAttributes(prevAttributes => {
+      const updatedAttributes = [...prevAttributes, { id: prevAttributes.length + 1, label: formData.fieldLabel }];
+      console.log("Saving all attributes...", updatedAttributes); // Logs the correct updated state
+      return updatedAttributes;
+    });
     handleCloseFieldModal();
-};
+  };
 
   const saveForm = async () => {
     const newField = {
-      fieldName: formData.fieldName,
-      fieldLabel: formData.fieldLabel,
-      fieldType: formData.fieldType,
-      isDependent: formData.isDependent,
-      isRequired: formData.isRequired,
-      defaultValue: formData.defaultValue || null,
+      id: String(model.id),
+      sId: String(activeSectionId),
+      formName: model.name,
+      fieldsData: fieldAllAttributes
     };
 
     try {
-      const response = await fetch("https://localhost:7060/api/Home/Index", {
+      const response = await fetch("https://localhost:7060/api/employee/submit-form", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -190,9 +274,11 @@ const EntityForm = () => {
       console.error("Error posting data:", error);
     }
     handleCloseFieldModal();
+    navigate(`/`)
   };
 
   const cancelForm = () => {
+    handleCloseFieldModal();
     console.log("Form cancelled");
   };
 
@@ -200,10 +286,10 @@ const EntityForm = () => {
   return (
     <>
       <div className="container mt-4">
-        {/* <h1 className="text-center">{model.label}</h1>
+        <h1 className="text-center">{model.label}</h1>
         <input id="EntityId" type="hidden" value={model.id} />
         <input id="EntityName" type="hidden" value={model.name} />
-        <input id="SectionId" type="hidden" value={model.sectionId} /> */}
+        <input id="SectionId" type="hidden" value={model.sectionId} />
 
         <div className="row border p-3 rounded" style={{ borderColor: "black" }}>
           <div className="col-md-3">
@@ -226,15 +312,18 @@ const EntityForm = () => {
               <div className="col-md-6">
                 <h4>Form Section</h4>
                 <ul className="list-group">
-                  {sections.map((section: { id: React.Key | null | undefined; sectionName: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => (
-                    // <li key={section.id} className="list-group-item" onClick={() => getSection(section.id)}>
-                    //   {section.sectionName}
-                    // </li>
-                    <div>
-                      <button onClick={() => getSection(section.id)}> {section.sectionName}</button>
-                      {/* <PartialForm attributes={attributesofPartialFormData} /> */}
-                    </div>
-                  ))}
+                  <div>
+                    {sections.map((section: { id: number; sectionName: string }) => (
+                      <div key={section.id}>
+                        <button
+                          className={`list-group-item ${activeSectionId === section.id ? "active" : ""}`}
+                          onClick={() => getSection(section.id)}
+                        >
+                          {section.sectionName}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </ul>
                 <ul className="list-group mt-2">
                   <li className="list-group-item" onClick={addSectionModel}>+ Add Section</li>
@@ -252,7 +341,7 @@ const EntityForm = () => {
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDrop}
                 >
-                  <h4>Drop Items Here</h4>
+                  <h4>Drop Items Here(newly field added here)</h4>
                   {attributes.map((attr) => (
                     <div key={attr.id} className="row mb-2">
                       <div className="col-md-6">
@@ -310,17 +399,54 @@ const EntityForm = () => {
                 onChange={handleInputChange}
               />
             </Form.Group>
+            {itemName === "Dropdown" && (
+              <>
+                <Form.Group className="mb-2">
+                  <Form.Label>Master Source</Form.Label>
+                  <select
+                    className="form-control"
+                    name="mastersource"
+                    value={formData.mastersource}
+                    onChange={handleInputChange}
+                  >
+                    {masters.map((master: { id: number; name: string }) => (
+                      <option key={master.id} value={master.name}>
+                        {master.name}
+                      </option>
+                    ))}
+                  </select>
+                </Form.Group>
+
+
+                <Form.Group className="mb-2">
+                  <Form.Label>Value field</Form.Label>
+                  <select
+                    className="form-control"
+                    name="valuefield"
+                    value={formData.valuefield}
+                    onChange={handleInputChange}
+                  >
+                    {getAttributeData.map((attr: { id: number; name: string }) => (
+                      <option key={attr.id} value={attr.name}>
+                        {attr.name}
+                      </option>
+                    ))}
+                  </select>
+                </Form.Group>
+              </>
+            )}
             <Form.Group className="mb-2">
               <Form.Label>Is Dependent Field</Form.Label>
               <select
                 className="form-control"
                 name="isDependent"
-                value={formData.isDependent}
+                value={formData.isDependent ? "Yes" : "No"} // Convert boolean back to string for UI
                 onChange={handleDropdownChange}
               >
-                <option value="0">No</option>
-                <option value="1">Yes</option>
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
               </select>
+
               {showDependentField && (
                 <div className="mb-2">
                   <label className="form-label">Dependent Field</label>
@@ -330,8 +456,12 @@ const EntityForm = () => {
                     value={formData.dependentField}
                     onChange={handleInputChange}
                   >
-                    <option value="child">Child field</option>
-                    <option value="parent">Parent field</option>
+                    {attributesofPartialFormData.map((attr) => (
+                      <option key={attr.id} value={attr.name}>
+                        {attr.name}
+                      </option>
+                    ))}
+
                   </select>
                 </div>
               )}
@@ -341,7 +471,7 @@ const EntityForm = () => {
               <select
                 className="form-control"
                 name="isRequired"
-                value={formData.isRequired}
+                value={formData.isRequired ? "1" : "0"} // Convert boolean back to string for UI
                 onChange={handleIsRequiredChange}
               >
                 <option value="0">No</option>
