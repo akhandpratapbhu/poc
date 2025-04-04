@@ -1,147 +1,7 @@
-// import React, { useState, useEffect } from "react";
-// import axios from "axios";
-
-// const AddFormData = ({ entity }) => {
-//   const [formData, setFormData] = useState({});
-
-//   useEffect(() => {
-//     entity.formSections.forEach((section) => {
-//       section.attributes.forEach((attr) => {
-//         if (attr.dataType.toLowerCase() === "dropdown") {
-//           fetchDropdownOptions(attr);
-//         }
-//       });
-//     });
-//   }, [entity]);
-
-//   const fetchDropdownOptions = async (attr) => {
-//     try {
-//       const response = await axios.post("/Employee/getDropdown", {
-//         screenId: entity.id,
-//         controlId: attr.id,
-//         sourceField: attr.masterSource,
-//         valueField: attr.valueField,
-//       });
-//       setFormData((prev) => ({
-//         ...prev,
-//         [attr.id]: { value: "", options: response.data.options },
-//       }));
-//     } catch (error) {
-//       console.error("Error fetching dropdown options", error);
-//     }
-//   };
-
-//   const handleChange = (e, attr) => {
-//     const { value } = e.target;
-//     setFormData((prev) => ({
-//       ...prev,
-//       [attr.id]: { ...prev[attr.id], value },
-//     }));
-
-//     if (attr.parentOf) {
-//       attr.parentOf.split(",").forEach((depId) => {
-//         const dependentField = entity.attributes.find((a) => a.id === depId);
-//         if (dependentField?.dataType.toLowerCase() === "dropdown") {
-//           fetchDropdownOptions(dependentField);
-//         }
-//       });
-//     }
-//   };
-
-//   const handleSubmit = async () => {
-//     const formattedData = Object.keys(formData).map((id) => ({
-//       name: entity.attributes.find((attr) => attr.id === id)?.name,
-//       value: formData[id]?.value || "",
-//     }));
-
-//     try {
-//       await axios.post("/Employee/InsertFormData", {
-//         id: entity.id,
-//         formName: entity.name,
-//         fieldsDataModel: formattedData,
-//       });
-//       alert("Form submitted successfully!");
-//       window.location.href = "/";
-//     } catch (error) {
-//       console.error("Error submitting form", error);
-//       alert("Error submitting form. Please try again.");
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <h1>{entity.label}</h1>
-//       <div className="row">
-//         <div className="col-md-2">
-//           <h4>Form Sections</h4>
-//           <ul className="nav nav-tabs">
-//             {entity.formSections.map((section, index) => (
-//               <li key={section.id} className="nav-item">
-//                 <a
-//                   className={`nav-link ${index === 0 ? "active" : ""}`}
-//                   data-toggle="tab"
-//                   href={`#${section.sectionName}`}
-//                 >
-//                   {section.sectionName}
-//                 </a>
-//               </li>
-//             ))}
-//           </ul>
-//         </div>
-//         <div className="col-md-10">
-//           <div className="tab-content">
-//             {entity.formSections.map((section, index) => (
-//               <div
-//                 key={section.id}
-//                 id={section.sectionName}
-//                 className={`tab-pane fade ${index === 0 ? "show active" : ""}`}
-//               >
-//                 {section.attributes.map((attr) => (
-//                   <div key={attr.id} className="form-group">
-//                     <label>{attr.label}</label>
-//                     {attr.dataType.toLowerCase() === "dropdown" ? (
-//                       <select
-//                         className="form-control"
-//                         value={formData[attr.id]?.value || ""}
-//                         onChange={(e) => handleChange(e, attr)}
-//                       >
-//                         <option value="">-- Please Select --</option>
-//                         {formData[attr.id]?.options?.map((option) => (
-//                           <option key={option.keyField} value={option.keyField}>
-//                             {option.valueField}
-//                           </option>
-//                         ))}
-//                       </select>
-//                     ) : (
-//                       <input
-//                         type={attr.dataType.toLowerCase() === "int" ? "number" : "text"}
-//                         className="form-control"
-//                         value={formData[attr.id]?.value || ""}
-//                         onChange={(e) => handleChange(e, attr)}
-//                       />
-//                     )}
-//                   </div>
-//                 ))}
-//               </div>
-//             ))}
-//           </div>
-//           <div className="form-actions">
-//             <button className="btn btn-secondary" onClick={() => (window.location.href = "/")}>Close</button>
-//             <button className="btn btn-success" onClick={handleSubmit}>Save</button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default AddFormData;
-
 
 import React, { useEffect, useState } from 'react';
 import './AddFormData.css';
 import { useLocation } from 'react-router-dom';
-import PartialForm from './PartialForm';
 
 type Section = {
   id: number;
@@ -180,6 +40,7 @@ const AddFormData = () => {
       .catch((error) => console.error("Error fetching entities:", error));
   }, []);
   const [activeTab, setActiveTab] = useState<number>(sections[0]?.id);
+console.log(activeTab);
 
   const [currentSection, setCurrentSection] = useState(0);
 
@@ -194,6 +55,8 @@ const AddFormData = () => {
 
 
   const [attributesofPartialFormData, setAttributesofPartialFormData] = useState<AttributeofPartialFormData[]>([]);
+  const [formData, setFormData] = useState<Record<string, {name:string; value: string; options?: any[] }>>({});
+console.log(attributesofPartialFormData);
 
 
   useEffect(() => {
@@ -226,9 +89,46 @@ const AddFormData = () => {
       console.error("Error posting data:", error);
     }
   };
-  const [formData, setFormData] = useState<Record<string, {name:string; value: string; options?: any[] }>>({});
-const[allfielddata,setallfielddata]=useState<{name:string; value: string}[]>([])
-
+  const fetchDropdownOptions = async (attr: any) => {
+    console.log("attr",attr);
+    
+    try {
+      const response = await fetch("https://localhost:7060/api/employee/addDropdown", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          screenId: String(model.id),
+          controlId: String(attr.id),
+          sourceField: attr.masterSource,
+          valueField: attr.valueField,
+           dependentField: "",
+          dependentFieldValue: ""
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+  console.log("data",data);
+  
+  setFormData((prev) => ({
+    ...prev,
+    [attr.id]: {
+      value: prev[attr.id]?.value || "", // ✅ Keep previously selected value
+      name:attr.name,
+      options: data.options,             // ✅ Update options only
+    },
+  }));
+  
+    } catch (error) {
+      console.error("Error fetching dropdown options", error);
+    }
+  };
+  const[dropdowndata,setdropdowndata]=useState({})
   const handleChange = (
     e: React.ChangeEvent<HTMLSelectElement> | React.ChangeEvent<HTMLInputElement>, 
     attr: AttributeofPartialFormData
@@ -237,41 +137,30 @@ const[allfielddata,setallfielddata]=useState<{name:string; value: string}[]>([])
     if (!attr.id) return; // ✅ Prevent undefined key
   
     console.log(attr.name, value); // ✅ Logs only name and value
-  
+
+   
     setFormData((prev) => ({
       ...prev,
       [String(attr.id)]: { name: attr.name, value }, // ✅ Correct structure
     }));
-    // Handle dependent dropdowns
-    // if (attr.parentOf) {
-    //   attr.parentOf.split(",").forEach((depId) => {
-    //     const dependentField = entity.attributes.find((a) => String(a.id) === String(depId));
-    //     if (dependentField?.dataType.toLowerCase() === "dropdown") {
-    //       fetchDropdownOptions(dependentField);
-    //     }
-    //   });
-    // }
-    const handleAddField = (attrId: string) => {
-      setallfielddata((prev) => [
-        ...prev,
-        { 
-          name: formData[attrId]?.name || "", 
-          value: formData[attrId]?.value || "" 
-        }
-      ]);
-    };
-  };
-
   
+    
+      console.log(attr.name, value);
+      setdropdowndata({ name: attr.name, value })
+  
+   
+  };
+  const AllfieldsDataModel = Object.values(formData).map(({ name, value }) => ({
+    name,
+    value,
+  }));
+console.log(AllfieldsDataModel,dropdowndata);
+  
+  //AllfieldsDataModel.push(dropdowndata)
   
 
   const handleSubmit = async () => {
-    const formattedData = attributesofPartialFormData.map((attr) => ({
-      name: attr.name,
-      value: formData[String(attr.id)]?.value || "",
-    }));
-  console.log("allfielddata",allfielddata);
-  console.log("formData",formData);
+ 
     try {
       const response = await fetch("https://localhost:7060/api/employee/InsertFormData", {
         method: "POST",
@@ -279,16 +168,17 @@ const[allfielddata,setallfielddata]=useState<{name:string; value: string}[]>([])
           "Content-Type": "application/json",
         },
         body: JSON.stringify({  // ✅ Correctly stringifying the body
-          id: model.id,       // ✅ Ensure these are included if needed
+          id: String(model.id),       // ✅ Ensure these are included if needed
           formName: model.name,
-          fieldsDataModel: allfielddata,
+          fieldsDataModel: AllfieldsDataModel,
+
         }),
       });
   
       if (!response.ok) throw new Error("Failed to submit form");
   
       alert("Form submitted successfully!");
-      window.location.href = "/";
+      //window.location.href = "/";
     } catch (error) {
       console.error("Error submitting form", error);
       alert("Error submitting form. Please try again.");
@@ -323,18 +213,22 @@ const[allfielddata,setallfielddata]=useState<{name:string; value: string}[]>([])
       <div key={attr.id} className="form-group">
         <label>{attr.label}</label>
         {attr.dataType.toLowerCase() === "dropdown" ? (
-          <select
-            className="form-control"
-            value={formData[String(attr.id)]?.value || ""}
-            onChange={(e) => handleChange(e, attr)}
-          >
-            <option value="">-- Please Select --</option>
-            {(formData[String(attr.id)]?.options ?? []).map((option) => (
-              <option key={option.keyField} value={option.keyField}>
-                {option.valueField}
-              </option>
-            ))}
-          </select>
+    <select
+    className="form-control"
+    value={formData[String(attr.id)]?.value || ""}
+    onClick={() => fetchDropdownOptions(attr)}
+    onChange={(e) => handleChange(e, attr)}
+  >
+    <option value="">-- Please Select --</option>
+    {(formData[String(attr.id)]?.options ?? []).map((option) => (
+      <option key={option.keyField} value={option.keyField}>
+        {option.valueField}
+      </option>
+    ))}
+  </select>
+  
+    
+      
         ) : (
           <input
             type={attr.dataType.toLowerCase() === "int" ? "number" : "text"}

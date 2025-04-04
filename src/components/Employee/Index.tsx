@@ -10,21 +10,28 @@ interface AttributeofPartialFormData {
   dataType: string;
   isRequired: boolean | number;
   label: string;
+  sortOrder:number
 }
-
+type Section = {
+  id: number;
+  sectionName: string;
+  entityId: number;
+  sortOrder: number;
+};
 const EntityForm = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
   const model = location.state?.entityData; // Get the passed data
   console.log(typeof (model.id));
-  const [sections, setSections] = useState([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [masters, setMasters] = useState([]);
   useEffect(() => {
     getSectionAllData();
     getAllMasterData();
   }, []);
   function getSectionAllData() {
+    
     fetch(`https://localhost:7060/api/employee/GetSections?screenId=${model.id}`)
       .then((response) => response.json())
       .then((data) => setSections(data))
@@ -36,6 +43,20 @@ const EntityForm = () => {
       .then((data) => setMasters(data))
       .catch((error) => console.error("Error fetching entities:", error));
   }
+  const [activeTab, setActiveTab] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (sections.length > 0) {
+      setActiveTab(sections[0].id);
+    }
+  }, [sections]);
+  console.log(activeTab);
+    useEffect(() => {
+      if (sections.length > 0) {
+        setActiveTab(sections[0].id);
+        getSection(sections[0].id);
+      }
+    }, [sections]); // Runs when `sections` are updated
   const [itemName, setitemName] = useState("");
   // State to store form data
   const [formData, setFormData] = useState({
@@ -61,8 +82,8 @@ const EntityForm = () => {
   // Handle change for text inputs
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value} = e.target;
-    console.log(e.target);
-    const selectedMaster = masters.find((master:{id:number;name:string}) => master.name === value);
+    console.log(name,value,masters);
+    const selectedMaster = masters.find((master:{id:number;name:string}) => master.id == (value));
     console.log(selectedMaster);
     if (name === "mastersource" && selectedMaster) {
       getAttribute(selectedMaster);
@@ -136,7 +157,8 @@ const EntityForm = () => {
     setShowFieldModal(true)
 
   };
-  const [activeSectionId, setActiveSectionId] = useState<null | undefined | number>(null);
+  const [activeSectionId, setActiveSectionId] = useState<null | undefined | number>(sections[0]?.id);
+console.log(activeSectionId);
 
   const [attributesofPartialFormData, setAttributesofPartialFormData] = useState<AttributeofPartialFormData[]>([]);
   const getSection = async (sId: React.Key | null | undefined) => {
@@ -174,6 +196,8 @@ const EntityForm = () => {
 
   const handleCloseFieldModal = () => {
     setShowFieldModal(false)
+    setShowDefaultValue(false)
+    setShowDependentField(false);
     setFormData({
       fieldType: "",
       fieldName: "",
@@ -216,12 +240,18 @@ const EntityForm = () => {
 
   const saveField = () => {
     console.log("Saving new field...", formData);
+    if(attributesofPartialFormData.length>0){
+      var maxSortOrder = Math.max(...attributesofPartialFormData.map(item => item.sortOrder));
+    }
+    else{
+      maxSortOrder=0;
+    }
 
     setFieldAllAttributes((prevAttributes) => {
       const updatedFieldAllAttributes = [
         ...prevAttributes,
         {
-          id: prevAttributes.length + 1,
+          id: 0 ,
           label: formData.fieldLabel,
           name: formData.fieldName,
           datatype: formData.fieldType,
@@ -231,7 +261,7 @@ const EntityForm = () => {
           defaultvalue: formData.defaultValue,
           isdependent: formData.isDependent,
           dependentfield: formData.dependentField,
-          sortOrder: prevAttributes.length + 1,
+          sortOrder: maxSortOrder+prevAttributes.length + 1,
         },
       ];
       console.log("Saving all attributes...", updatedFieldAllAttributes); // Logs correct updated state
@@ -401,21 +431,23 @@ const EntityForm = () => {
             </Form.Group>
             {itemName === "Dropdown" && (
               <>
-                <Form.Group className="mb-2">
-                  <Form.Label>Master Source</Form.Label>
-                  <select
-                    className="form-control"
-                    name="mastersource"
-                    value={formData.mastersource}
-                    onChange={handleInputChange}
-                  >
-                    {masters.map((master: { id: number; name: string }) => (
-                      <option key={master.id} value={master.name}>
-                        {master.name}
-                      </option>
-                    ))}
-                  </select>
-                </Form.Group>
+               <Form.Group className="mb-2">
+  <Form.Label>Master Source</Form.Label>
+  <select
+    className="form-control"
+    name="mastersource"
+    value={formData.mastersource}
+    onChange={handleInputChange}
+  >
+    <option value="">Select Master...</option> {/* This is your placeholder option */}
+    {masters.map((master: { id: number; name: string }) => (
+      <option key={master.id} value={master.id}>
+        {master.name}
+      </option>
+    ))}
+  </select>
+</Form.Group>
+
 
 
                 <Form.Group className="mb-2">
@@ -426,8 +458,9 @@ const EntityForm = () => {
                     value={formData.valuefield}
                     onChange={handleInputChange}
                   >
+                     <option value="">Select value....</option>
                     {getAttributeData.map((attr: { id: number; name: string }) => (
-                      <option key={attr.id} value={attr.name}>
+                      <option key={attr.id} value={attr.id}>
                         {attr.name}
                       </option>
                     ))}
@@ -456,8 +489,14 @@ const EntityForm = () => {
                     value={formData.dependentField}
                     onChange={handleInputChange}
                   >
+                       <option value="">Select dependent value....</option>
                     {attributesofPartialFormData.map((attr) => (
-                      <option key={attr.id} value={attr.name}>
+                      <option key={attr.id} value={attr.id}>
+                        {attr.name}
+                      </option>
+                    ))}
+                    {fieldAllAttributes.map((attr) => (
+                      <option key={attr.id} value={attr.id}>
                         {attr.name}
                       </option>
                     ))}

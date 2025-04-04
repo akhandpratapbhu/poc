@@ -27,7 +27,7 @@ const MaterialTableFormData = () => {
   useEffect(() => {
     fetch("https://localhost:7060/api/Home/Index")
       .then((response) => response.json())
-      .then((data) => setEntities(data)) 
+      .then((data) => setEntities(data))
       .catch((error) => console.error("Error fetching entities:", error));
   }, []);
 
@@ -36,7 +36,7 @@ const MaterialTableFormData = () => {
   const editRow = (entity: any) => {
     navigate(`/employee/index/${entity.id}`, { state: { entityData: entity } });
   };
-  
+
 
   const handleStatusChange = (id: number) => {
     fetch(`https://localhost:7060/api/Home/ChangeStatus?id=${id}`, { method: "GET" })
@@ -72,13 +72,15 @@ const MaterialTableFormData = () => {
               <TableCell>{entity.name}</TableCell>
               <TableCell>{entity.isActive ? "Active" : "Inactive"}</TableCell>
               <TableCell>
-                <Button
-                  variant="contained"
-                  sx={{ backgroundColor: "green", color: "white", marginRight: 1 }}
-                  onClick={() => editRow(entity)}
-                >
-                  EDIT
-                </Button>
+                {entity.isActive && (
+                  <Button
+                    variant="contained"
+                    sx={{ backgroundColor: "green", color: "white", marginRight: 1 }}
+                    onClick={() => editRow(entity)}
+                  >
+                    EDIT
+                  </Button>
+                )}
 
                 <Button
                   variant="contained"
