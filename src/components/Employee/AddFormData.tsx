@@ -199,7 +199,7 @@ console.log(AllfieldsDataModel,dropdowndata);
               <div
                 key={section.id}
                 className={`tab ${activeTab === section.id ? "active" : ""}`}
-                onClick={() => getSection(section.id)}
+                // onClick={() => getSection(section.id)}
               >
                 {section.sectionName}
               </div>
