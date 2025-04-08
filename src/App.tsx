@@ -9,38 +9,42 @@ import AddFormData from "../src/components/Employee/AddFormData";
 import "bootstrap/dist/css/bootstrap.min.css";
 import SparePartSaleInvoiceTable from './components/Home/griddata'
 import Sidebar from './components/Home/sidebar/sidebar'
-
+import VerticalLinearStepper from './components/Home/createform'
 function App() {
   return (
     <Router>
-    <div className="container-fluid">
-      <div className="row">
-        {/* Full-width Navbar */}
-        <div className="col-12"  style={{ backgroundColor: " #212529" }}>
-          <Navbar />
+      <div className="container-fluid">
+        <div className="row">
+          {/* Full-width Navbar */}
+          <div className="col-12" style={{ backgroundColor: " #212529" }}>
+            <Navbar />
+          </div>
+        </div>
+
+        <div className="row" style={{ height: "calc(100vh - 60px)" }}>
+          {/* Sidebar on left */}
+          <div className="col-2 p-0" style={{ backgroundColor: "grey" }}>
+            <Sidebar />
+          </div>
+
+          {/* Main content on right */}
+          <div className="col-10 p-3" style={{ overflowY: "auto", backgroundColor: "#f8f9fa" }}>
+            <Routes>
+              <Route path="/" element={<MaterialTableFormData />} />
+              <Route path="/AddFormDataList" element={<MaterialTableADDFormDataList />} />
+              <Route path="/employee/index/:id" element={<EIndex />} />
+              <Route path="/employee/addFormData/:id" element={<AddFormData />} />
+              <Route path="/allparts" element={<SparePartSaleInvoiceTable />} />
+              <Route
+                path= '/create-spare-sale-invoice'
+              element={<VerticalLinearStepper />}/> ,
+              
+            </Routes>
+          </div>
         </div>
       </div>
-  
-      <div className="row" style={{ height: "calc(100vh - 60px)" }}>
-        {/* Sidebar on left */}
-        <div className="col-2 p-0" style={{ backgroundColor: "grey", height: "100%" }}>
-          <Sidebar />
-        </div>
-  
-        {/* Main content on right */}
-        <div className="col-9 p-3" style={{ overflowY: "auto", backgroundColor: "#f8f9fa" }}>
-          <Routes>
-            <Route path="/" element={<MaterialTableFormData />} />
-            <Route path="/AddFormDataList" element={<MaterialTableADDFormDataList />} />
-            <Route path="/employee/index/:id" element={<EIndex />} />
-            <Route path="/employee/addFormData/:id" element={<AddFormData />} />
-            <Route path="/allparts" element={<SparePartSaleInvoiceTable />} />
-          </Routes>
-        </div>
-      </div>
-    </div>
-  </Router>
-  
+    </Router>
+
   );
 }
 

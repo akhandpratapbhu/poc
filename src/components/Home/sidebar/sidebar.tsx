@@ -1,33 +1,35 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './Sidebar.css';
 
 const Sidebar: React.FC = () => {
   const [isBestTimeOpen, setIsBestTimeOpen] = useState<boolean>(false);
 
-  const toggleBestTime = () => {
+  const toggleSpareModule = () => {
     setIsBestTimeOpen(prev => !prev);
   };
 
   return (
     <div className="sidebar">
-      <h2>Menu</h2>
+      <h2>Dashboard</h2>
 
       <div className={`menu-group ${isBestTimeOpen ? 'active' : ''}`}>
-        <button onClick={toggleBestTime}>
-          Best Trending Time ⌄
+        <button onClick={toggleSpareModule}>
+          Spare {isBestTimeOpen ? '▾' : '▸'}
         </button>
         {isBestTimeOpen && (
           <div className="submenu">
-            <a href="#">Morning</a>
-            <a href="#">Afternoon</a>
-            <a href="#">Evening</a>
+            <Link to="/create-mrr">* Create MRR</Link>
+            <Link to="/place-order">* Place Order</Link>
+            <Link to="/allparts">* Sale Invoice</Link>
+            <Link to="/mis">* MIS</Link>
           </div>
         )}
       </div>
 
-      <a className="static-link" href="#">Analytics</a>
-      <a className="static-link" href="#">Reports</a>
-      <a className="static-link" href="#">Settings</a>
+      <Link className="static-link" to="/analytics">Analytics</Link>
+      <Link className="static-link" to="/reports">Reports</Link>
+      <Link className="static-link" to="/settings">Settings</Link>
     </div>
   );
 };

@@ -6,8 +6,8 @@ const Navbar = () => {
   return (
     <nav className="navbar navbar-expand-lg ">
       <div className="container">
-        <Link className="navbar-brand" to="/">SMLI- DEMO</Link>
-        <button 
+      <Link style={{ textDecoration: "none" }} to="/allparts">SMLI- DEMO</Link>
+      <button 
           className="navbar-toggler" 
           type="button" 
           data-bs-toggle="collapse" 

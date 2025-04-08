@@ -1,4 +1,7 @@
 import { useState, ChangeEvent, MouseEvent } from "react";
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import IconButton from '@mui/material/IconButton';
+
 import {
     Box,
     Paper,
@@ -32,17 +35,22 @@ import { Search, KeyboardArrowDown, FilterList, TableRows, FileDownload } from "
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx"; // Excel library
 import jsPDF from "jspdf"; // PDF library
-interface JobData {
-    jobId: string;
-    date: string;
-    customerName: string;
-    carModel: string;
-    chassisNo: string;
-    serviceType: string;
-    technicianName: string;
-    defaultView: string;
-    serviceDescription: string;
+export interface JobData {
+    SaleId: string;
+    InvoiceNo: string;
+    InvoiceDate: string;
+    PFInvoiceNo: string;
+    CustomerType: string;
+    SaleTo: string;
+    NoOfItems: number;
+    paymentType: string;
+    Amount: number;
+    Remarks: string;
+    Status: string;
+    CancelRemark: string;
+    Action: string;
 }
+
 
 interface Column {
     id: keyof JobData;
@@ -52,50 +60,68 @@ interface Column {
 
 const mockData: JobData[] = [
     {
-        jobId: "J00012345",
-        date: "13-02-2025",
-        customerName: "Jatin Bansal",
-        carModel: "Sartaj 5252 Diesel",
-        chassisNo: "LZZ5EXSA2D51",
-        serviceType: "Full Service",
-        technicianName: "Hunar Jagwani",
-        defaultView: "Full Entry/Brake Fee",
-        serviceDescription: "Oil Change, Brake Inspection & Replace",
+        SaleId: "S00012345",
+        InvoiceNo: "INV-2025-001",
+        InvoiceDate: "13-02-2025",
+        PFInvoiceNo: "PF-2025-001",
+        CustomerType: "Retail",
+        SaleTo: "Jatin Bansal",
+        NoOfItems: 3,
+        paymentType: "Cash",
+        Amount: 12500,
+        Remarks: "Paid in full",
+        Status: "Completed",
+        CancelRemark: "",
+        Action: "..."
     },
     {
-        jobId: "J00012346",
-        date: "12-02-2025",
-        customerName: "Anurag Tiwari",
-        carModel: "Samrat GS Tipper",
-        chassisNo: "LZZ5EXSA2D51",
-        serviceType: "Oil Change",
-        technicianName: "Mahesh Kumar",
-        defaultView: "Transmission Fluid",
-        serviceDescription: "Oil Change, Fluid top-up",
+        SaleId: "S00012346",
+        InvoiceNo: "INV-2025-002",
+        InvoiceDate: "12-02-2025",
+        PFInvoiceNo: "PF-2025-002",
+        CustomerType: "Corporate",
+        SaleTo: "Anurag Tiwari",
+        NoOfItems: 2,
+        paymentType: "Credit",
+        Amount: 9800,
+        Remarks: "Pending approval",
+        Status: "Pending",
+        CancelRemark: "",
+        Action: "..."
     },
     {
-        jobId: "J00012347",
-        date: "11-02-2025",
-        customerName: "Rohit Kumar",
-        carModel: "Supreme GS",
-        chassisNo: "LZZ5EXSA2D51",
-        serviceType: "Transmission Repair",
-        technicianName: "Tarun Tiwari",
-        defaultView: "Brake Pads, Rotor",
-        serviceDescription: "Rotation and balancing of tires",
-    },
+        SaleId: "S00012347",
+        InvoiceNo: "INV-2025-003",
+        InvoiceDate: "11-02-2025",
+        PFInvoiceNo: "PF-2025-003",
+        CustomerType: "Retail",
+        SaleTo: "Rohit Kumar",
+        NoOfItems: 5,
+        paymentType: "Card",
+        Amount: 16200,
+        Remarks: "Discount applied",
+        Status: "Completed",
+        CancelRemark: "",
+        Action: "..."
+    }
 ];
 
+
 const initialColumns: Column[] = [
-    { id: "jobId", label: "Job ID", visible: true },
-    { id: "date", label: "Date", visible: true },
-    { id: "customerName", label: "Customer Name", visible: true },
-    { id: "carModel", label: "Car Model", visible: true },
-    { id: "chassisNo", label: "Chassis No", visible: true },
-    { id: "serviceType", label: "Service Type", visible: true },
-    { id: "technicianName", label: "Technician Name", visible: true },
-    { id: "defaultView", label: "Default View", visible: true },
-    { id: "serviceDescription", label: "Service Description", visible: true },
+    { id: "SaleId", label: "Sale Id", visible: true },
+    { id: "InvoiceNo", label: "Invoice No", visible: true },
+    { id: "InvoiceDate", label: "Invoice Date", visible: true },
+    { id: "PFInvoiceNo", label: "PF Invoice No", visible: true },
+    { id: "CustomerType", label: "Customer Type", visible: true },
+    { id: "SaleTo", label: "Sale To", visible: true },
+    { id: "NoOfItems", label: "No Of Items", visible: true },
+    { id: "paymentType", label: "Payment Type", visible: true },
+    { id: "Amount", label: "Amount", visible: true },
+    { id: "Remarks", label: "Remarks", visible: true },
+    { id: "Status", label: "Status", visible: true },
+    { id: "CancelRemark", label: "CancelRemark", visible: true },
+    { id: "Action", label: "Action", visible: true },
+
 ];
 
 const SparePartSaleInvoiceTable: React.FC = () => {
@@ -113,21 +139,26 @@ const SparePartSaleInvoiceTable: React.FC = () => {
     const [manageColumnsAnchor, setManageColumnsAnchor] = useState<HTMLButtonElement | null>(null);
     const [filterAnchor, setFilterAnchor] = useState<HTMLButtonElement | null>(null);
     const [searchTermsColumnWise, setSearchTermsColumnWise] = useState<Record<keyof JobData, string>>({
-        jobId: "",
-        date: "",
-        customerName: "",
-        carModel: "",
-        chassisNo: "",
-        serviceType: "",
-        technicianName: "",
-        defaultView: "",
-        serviceDescription: "",
+        SaleId: "",
+        InvoiceNo: "",
+        InvoiceDate: "",
+        PFInvoiceNo: "",
+        CustomerType: "",
+        SaleTo: "",
+        NoOfItems: "",
+        paymentType: "",
+        Amount: "",
+        Remarks: "",
+        Status: "",
+        CancelRemark: "",
+        Action: "",
     });
+
 
 
     const handleSelectAllClick = (event: ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            const newSelected = mockData.map((n) => n.jobId);
+            const newSelected = mockData.map((n) => n.SaleId);
             setSelected(newSelected);
             return;
         }
@@ -240,12 +271,43 @@ const SparePartSaleInvoiceTable: React.FC = () => {
         doc.save("export.pdf");
         setOpen(false); // Close dialog
     };
+    const [selectedRow, setSelectedRow] = useState<JobData | null>(null);
+const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+const handleActionClick = (row: JobData) => {
+    setSelectedRow(row);
+    setIsPopupOpen(true);
+};
+
+const handleClosePopup = () => {
+    setIsPopupOpen(false);
+    setSelectedRow(null);
+};
+const handleAction = (type: "view" | "edit" | "print" | "cancel") => {
+    if (!selectedRow) return;
+
+    switch (type) {
+        case "view":
+            console.log("View clicked:", selectedRow);
+            break;
+        case "edit":
+            console.log("Edit clicked:", selectedRow);
+            break;
+        case "print":
+            console.log("Print clicked:", selectedRow);
+            break;
+        case "cancel":
+            console.log("Cancel clicked:", selectedRow);
+            break;
+    }
+};
+
     return (
         <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: '30px' }}>
                 <span style={{ font: "40px", padding: '5px', margin: '10px' }}>Spare-spare part sale Invoice</span>
                 <button
-                    onClick={() => navigate("/create-form")}
+                    onClick={() => navigate("/create-spare-sale-invoice")}
                     style={{ color: "white", backgroundColor: "red", borderRadius: '10px', width: "100px", height: "40px", padding: '5px' }}
                 >
                     + Add New
@@ -259,7 +321,7 @@ const SparePartSaleInvoiceTable: React.FC = () => {
                 padding: "6px",
                 borderRadius: "8px",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              
+
             }}>
                 <Box sx={{ width: "100%", p: 2 }}>
                     <Box
@@ -471,16 +533,16 @@ const SparePartSaleInvoiceTable: React.FC = () => {
                             </TableHead>
                             <TableBody>
                                 {sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
-                                    const isItemSelected = isSelected(row.jobId);
+                                    const isItemSelected = isSelected(row.SaleId);
 
                                     return (
                                         <TableRow
                                             hover
-                                            onClick={(event) => handleClick(event, row.jobId)}
+                                            onClick={(event) => handleClick(event, row.SaleId)}
                                             role="checkbox"
                                             aria-checked={isItemSelected}
                                             tabIndex={-1}
-                                            key={row.jobId}
+                                            key={row.SaleId}
                                             selected={isItemSelected}
                                             sx={{
                                                 bgcolor: index % 2 === 0 ? "white" : "grey.50",
@@ -491,7 +553,23 @@ const SparePartSaleInvoiceTable: React.FC = () => {
                                                 <Checkbox checked={isItemSelected} />
                                             </TableCell>
                                             {columns.filter((col) => col.visible).map((column) => (
-                                                <TableCell key={column.id}>{row[column.id]}</TableCell>
+                                                <TableCell
+                                                    key={column.id}
+                                                >
+                                                    {column.id === "Action" ? (
+                                                        <IconButton
+                                                        onClick={(e) => {
+                                                            e.stopPropagation(); // prevent row click conflict
+                                                            handleActionClick(row);
+                                                        }}
+                                                    >
+                                                        <MoreVertIcon />
+                                                    </IconButton>
+                                                    
+                                                    ) : (
+                                                        row[column.id]
+                                                    )}
+                                                </TableCell>
                                             ))}
                                         </TableRow>
                                     );
@@ -499,6 +577,28 @@ const SparePartSaleInvoiceTable: React.FC = () => {
                             </TableBody>
                         </Table>
                     </TableContainer>;
+                    <Dialog open={isPopupOpen} onClose={handleClosePopup} fullWidth maxWidth="sm">
+    <DialogTitle>Actions</DialogTitle>
+    <DialogContent dividers>
+        {selectedRow && (
+            <>
+                 <Typography gutterBottom><strong>Sale ID:</strong> {selectedRow.SaleId}</Typography>
+                <Typography gutterBottom><strong>SaleTo:</strong> {selectedRow.SaleTo}</Typography>
+                <Typography gutterBottom><strong>InvoiceNo:</strong> {selectedRow.InvoiceNo}</Typography> 
+
+                <Box mt={2} display="flex" gap={2} flexWrap="wrap">
+                    <Button variant="contained" onClick={() => handleAction("view")}>View</Button>
+                    <Button variant="contained" color="primary" onClick={() => handleAction("edit")}>Edit</Button>
+                    <Button variant="contained" color="secondary" onClick={() => handleAction("print")}>Print</Button>
+                    <Button variant="outlined" color="error" onClick={() => handleAction("cancel")}>Cancel</Button>
+                </Box>
+            </>
+        )}
+    </DialogContent>
+    <DialogActions>
+        <Button onClick={handleClosePopup}>Close</Button>
+    </DialogActions>
+</Dialog>
 
                     <TablePagination
                         component="div"
