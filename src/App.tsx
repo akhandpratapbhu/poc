@@ -9,7 +9,7 @@ import AddFormData from "../src/components/Employee/AddFormData";
 import "bootstrap/dist/css/bootstrap.min.css";
 import SparePartSaleInvoiceTable from './components/Home/griddata'
 import Sidebar from './components/Home/sidebar/sidebar'
-import VerticalLinearStepper from './components/Home/createform'
+import VerticalLinearStepper from './components/Home/getform'
 function App() {
   return (
     <Router>
@@ -36,7 +36,7 @@ function App() {
               <Route path="/employee/addFormData/:id" element={<AddFormData />} />
               <Route path="/allparts" element={<SparePartSaleInvoiceTable />} />
               <Route
-                path= '/create-spare-sale-invoice'
+                path= '/get-spare-sale-invoice-form'
               element={<VerticalLinearStepper />}/> ,
               
             </Routes>

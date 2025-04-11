@@ -21,7 +21,7 @@ const Sidebar: React.FC = () => {
           <div className="submenu">
             <Link to="/create-mrr">* Create MRR</Link>
             <Link to="/place-order">* Place Order</Link>
-            <Link to="/allparts">* Sale Invoice</Link>
+            <Link to="/get-spare-sale-invoice-form">* Sale Invoice</Link>
             <Link to="/mis">* MIS</Link>
           </div>
         )}

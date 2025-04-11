@@ -1,4 +1,4 @@
-import { useState, ChangeEvent, MouseEvent } from "react";
+import { useState, ChangeEvent, MouseEvent, useEffect } from "react";
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import IconButton from '@mui/material/IconButton';
 
@@ -35,91 +35,98 @@ import { Search, KeyboardArrowDown, FilterList, TableRows, FileDownload } from "
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx"; // Excel library
 import jsPDF from "jspdf"; // PDF library
-export interface JobData {
-    SaleId: string;
-    InvoiceNo: string;
-    InvoiceDate: string;
-    PFInvoiceNo: string;
-    CustomerType: string;
-    SaleTo: string;
-    NoOfItems: number;
-    paymentType: string;
-    Amount: number;
-    Remarks: string;
-    Status: string;
-    CancelRemark: string;
-    Action: string;
-}
-
+import { generatePrintHTML } from "./printreport";
+interface SpareData {
+    id: string;
+    invoiceNo: string;
+    invoiceDate: string;
+    piNumber: string;
+    customerType: string;
+    customerOnInvoice: string;
+    customerOutstanding: string;
+    billOn: string;
+    grossWeight: string;
+    creditLimit: string;
+    address: string;
+    remarks: string;
+    billedToCustomer: string;
+    customerGSTNo: string;
+    dealerGSTNo: string;
+    shippedToCustomer: string;
+    dispatchThrough: string;
+    transportName: string;
+    Action?: string; // optional if you really need it
+  }
+  
 
 interface Column {
-    id: keyof JobData;
+    id: keyof SpareData;
     label: string;
     visible: boolean;
 }
 
-const mockData: JobData[] = [
-    {
-        SaleId: "S00012345",
-        InvoiceNo: "INV-2025-001",
-        InvoiceDate: "13-02-2025",
-        PFInvoiceNo: "PF-2025-001",
-        CustomerType: "Retail",
-        SaleTo: "Jatin Bansal",
-        NoOfItems: 3,
-        paymentType: "Cash",
-        Amount: 12500,
-        Remarks: "Paid in full",
-        Status: "Completed",
-        CancelRemark: "",
-        Action: "..."
-    },
-    {
-        SaleId: "S00012346",
-        InvoiceNo: "INV-2025-002",
-        InvoiceDate: "12-02-2025",
-        PFInvoiceNo: "PF-2025-002",
-        CustomerType: "Corporate",
-        SaleTo: "Anurag Tiwari",
-        NoOfItems: 2,
-        paymentType: "Credit",
-        Amount: 9800,
-        Remarks: "Pending approval",
-        Status: "Pending",
-        CancelRemark: "",
-        Action: "..."
-    },
-    {
-        SaleId: "S00012347",
-        InvoiceNo: "INV-2025-003",
-        InvoiceDate: "11-02-2025",
-        PFInvoiceNo: "PF-2025-003",
-        CustomerType: "Retail",
-        SaleTo: "Rohit Kumar",
-        NoOfItems: 5,
-        paymentType: "Card",
-        Amount: 16200,
-        Remarks: "Discount applied",
-        Status: "Completed",
-        CancelRemark: "",
-        Action: "..."
-    }
-];
+// const mockData: SpareData[] = [
+//     {
+//         SaleId: "S00012345",
+//         InvoiceNo: "INV-2025-001",
+//         InvoiceDate: "13-02-2025",
+//         PFInvoiceNo: "PF-2025-001",
+//         CustomerType: "Retail",
+//         SaleTo: "Jatin Bansal",
+//         NoOfItems: 3,
+//         paymentType: "Cash",
+//         Amount: 12500,
+//         Remarks: "Paid in full",
+//         Status: "Completed",
+//         CancelRemark: "",
+//         Action: "..."
+//     },
+//     {
+//         SaleId: "S00012346",
+//         InvoiceNo: "INV-2025-002",
+//         InvoiceDate: "12-02-2025",
+//         PFInvoiceNo: "PF-2025-002",
+//         CustomerType: "Corporate",
+//         SaleTo: "Anurag Tiwari",
+//         NoOfItems: 2,
+//         paymentType: "Credit",
+//         Amount: 9800,
+//         Remarks: "Pending approval",
+//         Status: "Pending",
+//         CancelRemark: "",
+//         Action: "..."
+//     },
+//     {
+//         SaleId: "S00012347",
+//         InvoiceNo: "INV-2025-003",
+//         InvoiceDate: "11-02-2025",
+//         PFInvoiceNo: "PF-2025-003",
+//         CustomerType: "Retail",
+//         SaleTo: "Rohit Kumar",
+//         NoOfItems: 5,
+//         paymentType: "Card",
+//         Amount: 16200,
+//         Remarks: "Discount applied",
+//         Status: "Completed",
+//         CancelRemark: "",
+//         Action: "..."
+//     }
+// ];
 
 
 const initialColumns: Column[] = [
-    { id: "SaleId", label: "Sale Id", visible: true },
-    { id: "InvoiceNo", label: "Invoice No", visible: true },
-    { id: "InvoiceDate", label: "Invoice Date", visible: true },
-    { id: "PFInvoiceNo", label: "PF Invoice No", visible: true },
-    { id: "CustomerType", label: "Customer Type", visible: true },
-    { id: "SaleTo", label: "Sale To", visible: true },
-    { id: "NoOfItems", label: "No Of Items", visible: true },
-    { id: "paymentType", label: "Payment Type", visible: true },
-    { id: "Amount", label: "Amount", visible: true },
-    { id: "Remarks", label: "Remarks", visible: true },
-    { id: "Status", label: "Status", visible: true },
-    { id: "CancelRemark", label: "CancelRemark", visible: true },
+    { id: "id", label: "Sale Id", visible: true },
+    { id: "invoiceNo", label: "Invoice No", visible: true },
+    { id: "invoiceDate", label: "Invoice Date", visible: true },
+    { id: "piNumber", label: "PF Invoice No", visible: true },
+    { id: "customerType", label: "Customer Type", visible: true },
+    { id: "customerOnInvoice", label: "Sale To", visible: true },
+    { id: "customerOutstanding", label: "customer Outstanding", visible: true },
+    { id: "billOn", label: "bill On", visible: true },
+    { id: "grossWeight", label: "gross Weight", visible: true },
+    { id: "creditLimit", label: "credit Limit", visible: true },
+    { id: "address", label: "address", visible: true },
+    { id: "remarks", label: "Remarks", visible: true },
     { id: "Action", label: "Action", visible: true },
 
 ];
@@ -138,27 +145,43 @@ const SparePartSaleInvoiceTable: React.FC = () => {
     // Menu states
     const [manageColumnsAnchor, setManageColumnsAnchor] = useState<HTMLButtonElement | null>(null);
     const [filterAnchor, setFilterAnchor] = useState<HTMLButtonElement | null>(null);
-    const [searchTermsColumnWise, setSearchTermsColumnWise] = useState<Record<keyof JobData, string>>({
-        SaleId: "",
-        InvoiceNo: "",
-        InvoiceDate: "",
-        PFInvoiceNo: "",
-        CustomerType: "",
-        SaleTo: "",
-        NoOfItems: "",
-        paymentType: "",
-        Amount: "",
-        Remarks: "",
-        Status: "",
-        CancelRemark: "",
-        Action: "",
-    });
+    const [searchTermsColumnWise, setSearchTermsColumnWise] = useState<Record<keyof SpareData, string>>({
+        id: "",
+        invoiceNo: "",
+        invoiceDate: "",
+        piNumber: "",
+        customerType: "",
+        customerOnInvoice: "",
+        customerOutstanding: "",
+        billOn: "",
+        grossWeight: "",
+        creditLimit: "",
+        address: "",
+        remarks: "",
+        billedToCustomer: "",
+        customerGSTNo: "",
+        dealerGSTNo: "",
+        shippedToCustomer: "",
+        dispatchThrough: "",
+        transportName: "",
+        Action: "", // include only if part of `SpareData`
+      });
+      
+      
 
+    const [GetAllSaleInvoices, setGetAllSaleInvoices] = useState<SpareData[]>([]);
+
+    useEffect(() => {
+        fetch("https://localhost:7060/api/Spare/GetAllSaleInvoices")
+            .then((response) => response.json())
+            .then((data) => setGetAllSaleInvoices(data)) // ✅ Now TypeScript knows the structure of 'data'
+            .catch((error) => console.error("Error fetching entities:", error));
+    }, []);
 
 
     const handleSelectAllClick = (event: ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            const newSelected = mockData.map((n) => n.SaleId);
+            const newSelected = GetAllSaleInvoices.map((n) => n.id);
             setSelected(newSelected);
             return;
         }
@@ -188,7 +211,7 @@ const SparePartSaleInvoiceTable: React.FC = () => {
         setSelected(newSelected);
     };
 
-    const handleColumnVisibilityChange = (columnId: keyof JobData) => {
+    const handleColumnVisibilityChange = (columnId: keyof SpareData) => {
         setColumns(
             columns.map((col) =>
                 col.id === columnId ? { ...col, visible: !col.visible } : col
@@ -207,7 +230,7 @@ const SparePartSaleInvoiceTable: React.FC = () => {
         setPage(0);
     };
 
-    const handleSearchColumnWise = (id: keyof JobData, e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleSearchColumnWise = (id: keyof SpareData, e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setSearchTermsColumnWise((prev) => ({
             ...prev,
             [id]: e.target.value.toLowerCase(),
@@ -215,7 +238,7 @@ const SparePartSaleInvoiceTable: React.FC = () => {
     };
 
 
-    const filteredData = mockData.filter((item) => {
+    const filteredData = GetAllSaleInvoices.filter((item) => {
         // Global Search Logic
         const isGlobalMatch = Object.values(item).some((value) =>
             String(value).toLowerCase().includes(searchTerm)
@@ -224,7 +247,7 @@ const SparePartSaleInvoiceTable: React.FC = () => {
         // Column-Wise Search Logic
         const isColumnMatch = Object.entries(searchTermsColumnWise).every(([key, term]) => {
             if (!term) return true; // Skip filtering for empty search fields
-            return String(item[key as keyof JobData]).toLowerCase().includes(term);
+            return String(item[key as keyof SpareData]).toLowerCase().includes(term);
         });
 
         return isGlobalMatch && isColumnMatch; // Both filters should match
@@ -238,13 +261,21 @@ const SparePartSaleInvoiceTable: React.FC = () => {
 
     const sortedData = [...filteredData].sort((a, b) => {
         if (orderBy) {
-            const key = orderBy as keyof JobData; // ✅ Explicitly tell TypeScript it's a valid key
-
-            if (a[key] < b[key]) return order === "asc" ? -1 : 1;
-            if (a[key] > b[key]) return order === "asc" ? 1 : -1;
+            const key = orderBy as keyof SpareData;
+    
+            const aValue = a[key];
+            const bValue = b[key];
+    
+            if (aValue == null && bValue == null) return 0;
+            if (aValue == null) return order === "asc" ? -1 : 1;
+            if (bValue == null) return order === "asc" ? 1 : -1;
+    
+            if (aValue < bValue) return order === "asc" ? -1 : 1;
+            if (aValue > bValue) return order === "asc" ? 1 : -1;
         }
         return 0;
     });
+    
     const [open, setOpen] = useState(false);
 
     // Function to export data as Excel
@@ -271,43 +302,59 @@ const SparePartSaleInvoiceTable: React.FC = () => {
         doc.save("export.pdf");
         setOpen(false); // Close dialog
     };
-    const [selectedRow, setSelectedRow] = useState<JobData | null>(null);
-const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [selectedRow, setSelectedRow] = useState<SpareData | null>(null);
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
 
-const handleActionClick = (row: JobData) => {
-    setSelectedRow(row);
-    setIsPopupOpen(true);
-};
+    const handleActionClick = (row: SpareData) => {
+        setSelectedRow(row);
+        setIsPopupOpen(true);
+    };
 
-const handleClosePopup = () => {
-    setIsPopupOpen(false);
-    setSelectedRow(null);
-};
-const handleAction = (type: "view" | "edit" | "print" | "cancel") => {
-    if (!selectedRow) return;
+    const handleClosePopup = () => {
+        setIsPopupOpen(false);
+        setSelectedRow(null);
+    };
 
-    switch (type) {
-        case "view":
-            console.log("View clicked:", selectedRow);
-            break;
-        case "edit":
-            console.log("Edit clicked:", selectedRow);
-            break;
-        case "print":
-            console.log("Print clicked:", selectedRow);
-            break;
-        case "cancel":
-            console.log("Cancel clicked:", selectedRow);
-            break;
-    }
-};
+    const handleAction = (type: "view" | "edit" | "print" | "cancel") => {
+        if (!selectedRow) return;
+console.log(selectedRow);
+
+        switch (type) {
+            case "view":
+                console.log("View clicked:", selectedRow);
+                break;
+            case "edit":
+                console.log("Edit clicked:", selectedRow);
+                break;
+
+            case "print":
+
+                const htmlContent = generatePrintHTML(selectedRow); // your order data object
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                    printWindow.document.open();
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    printWindow.focus();
+                    printWindow.print();
+                }
+
+                break;
+
+            case "cancel":
+                console.log("Cancel clicked:", selectedRow);
+                break;
+                console.log(`${type} clicked:`, selectedRow);
+                break;
+        }
+    };
 
     return (
         <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: '30px' }}>
                 <span style={{ font: "40px", padding: '5px', margin: '10px' }}>Spare-spare part sale Invoice</span>
                 <button
-                    onClick={() => navigate("/create-spare-sale-invoice")}
+                    onClick={() => navigate("/get-spare-sale-invoice-form")}
                     style={{ color: "white", backgroundColor: "red", borderRadius: '10px', width: "100px", height: "40px", padding: '5px' }}
                 >
                     + Add New
@@ -533,16 +580,16 @@ const handleAction = (type: "view" | "edit" | "print" | "cancel") => {
                             </TableHead>
                             <TableBody>
                                 {sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
-                                    const isItemSelected = isSelected(row.SaleId);
+                                    const isItemSelected = isSelected(row.id);
 
                                     return (
                                         <TableRow
                                             hover
-                                            onClick={(event) => handleClick(event, row.SaleId)}
+                                            onClick={(event) => handleClick(event, row.id)}
                                             role="checkbox"
                                             aria-checked={isItemSelected}
                                             tabIndex={-1}
-                                            key={row.SaleId}
+                                            key={row.id}
                                             selected={isItemSelected}
                                             sx={{
                                                 bgcolor: index % 2 === 0 ? "white" : "grey.50",
@@ -558,14 +605,14 @@ const handleAction = (type: "view" | "edit" | "print" | "cancel") => {
                                                 >
                                                     {column.id === "Action" ? (
                                                         <IconButton
-                                                        onClick={(e) => {
-                                                            e.stopPropagation(); // prevent row click conflict
-                                                            handleActionClick(row);
-                                                        }}
-                                                    >
-                                                        <MoreVertIcon />
-                                                    </IconButton>
-                                                    
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // prevent row click conflict
+                                                                handleActionClick(row);
+                                                            }}
+                                                        >
+                                                            <MoreVertIcon />
+                                                        </IconButton>
+
                                                     ) : (
                                                         row[column.id]
                                                     )}
@@ -578,27 +625,27 @@ const handleAction = (type: "view" | "edit" | "print" | "cancel") => {
                         </Table>
                     </TableContainer>;
                     <Dialog open={isPopupOpen} onClose={handleClosePopup} fullWidth maxWidth="sm">
-    <DialogTitle>Actions</DialogTitle>
-    <DialogContent dividers>
-        {selectedRow && (
-            <>
-                 <Typography gutterBottom><strong>Sale ID:</strong> {selectedRow.SaleId}</Typography>
-                <Typography gutterBottom><strong>SaleTo:</strong> {selectedRow.SaleTo}</Typography>
-                <Typography gutterBottom><strong>InvoiceNo:</strong> {selectedRow.InvoiceNo}</Typography> 
+                        <DialogTitle>Actions</DialogTitle>
+                        <DialogContent dividers>
+                            {selectedRow && (
+                                <>
+                                    <Typography gutterBottom><strong>Sale ID:</strong> {selectedRow.id}</Typography>
+                                    <Typography gutterBottom><strong>SaleTo:</strong> {selectedRow.billedToCustomer}</Typography>
+                                    <Typography gutterBottom><strong>InvoiceNo:</strong> {selectedRow.invoiceNo}</Typography>
 
-                <Box mt={2} display="flex" gap={2} flexWrap="wrap">
-                    <Button variant="contained" onClick={() => handleAction("view")}>View</Button>
-                    <Button variant="contained" color="primary" onClick={() => handleAction("edit")}>Edit</Button>
-                    <Button variant="contained" color="secondary" onClick={() => handleAction("print")}>Print</Button>
-                    <Button variant="outlined" color="error" onClick={() => handleAction("cancel")}>Cancel</Button>
-                </Box>
-            </>
-        )}
-    </DialogContent>
-    <DialogActions>
-        <Button onClick={handleClosePopup}>Close</Button>
-    </DialogActions>
-</Dialog>
+                                    <Box mt={2} display="flex" gap={2} flexWrap="wrap">
+                                        <Button variant="contained" onClick={() => handleAction("view")}>View</Button>
+                                        <Button variant="contained" color="primary" onClick={() => handleAction("edit")}>Edit</Button>
+                                        <Button variant="contained" color="secondary" onClick={() => handleAction("print")}>Print</Button>
+                                        <Button variant="outlined" color="error" onClick={() => handleAction("cancel")}>Cancel</Button>
+                                    </Box>
+                                </>
+                            )}
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleClosePopup}>Close</Button>
+                        </DialogActions>
+                    </Dialog>
 
                     <TablePagination
                         component="div"

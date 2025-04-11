@@ -10,13 +10,19 @@ interface AttributeofPartialFormData {
   dataType: string;
   isRequired: boolean | number;
   label: string;
-  sortOrder:number
+  sortOrder: number
 }
 type Section = {
   id: number;
   sectionName: string;
   entityId: number;
   sortOrder: number;
+};
+
+const entityColumnMap: Record<string, string[]> = {
+  "part-master": ["id", "name", "description", "price", "category"],
+  sales: ["invoiceNo", "invoiceDate", "customerName", "amount"],
+  stock: ["productId", "warehouse", "stockCount", "lastUpdated"],
 };
 const EntityForm = () => {
 
@@ -31,7 +37,7 @@ const EntityForm = () => {
     getAllMasterData();
   }, []);
   function getSectionAllData() {
-    
+
     fetch(`https://localhost:7060/api/employee/GetSections?screenId=${model.id}`)
       .then((response) => response.json())
       .then((data) => setSections(data))
@@ -51,12 +57,12 @@ const EntityForm = () => {
     }
   }, [sections]);
   console.log(activeTab);
-    useEffect(() => {
-      if (sections.length > 0) {
-        setActiveTab(sections[0].id);
-        getSection(sections[0].id);
-      }
-    }, [sections]); // Runs when `sections` are updated
+  useEffect(() => {
+    if (sections.length > 0) {
+      setActiveTab(sections[0].id);
+      getSection(sections[0].id);
+    }
+  }, [sections]); // Runs when `sections` are updated
   const [itemName, setitemName] = useState("");
   // State to store form data
   const [formData, setFormData] = useState({
@@ -71,26 +77,26 @@ const EntityForm = () => {
     valuefield: ""
   });
   const [getAttributeData, setGetAttributeData] = useState([]);
-  function getAttribute(master:any){
+  function getAttribute(master: any) {
     console.log(master.id);
-    
+
     fetch(`https://localhost:7060/api/employee/GetAttributes?masterId=${master.id}`)
-    .then((response) => response.json())
-    .then((data) => setGetAttributeData(data))
-    .catch((error) => console.error("Error fetching entities:", error));
+      .then((response) => response.json())
+      .then((data) => setGetAttributeData(data))
+      .catch((error) => console.error("Error fetching entities:", error));
   }
   // Handle change for text inputs
   const handleInputChange = (e: React.ChangeEvent<any>) => {
-    const { name, value} = e.target;
-    console.log(name,value,masters);
-    const selectedMaster = masters.find((master:{id:number;name:string}) => master.id == (value));
+    const { name, value } = e.target;
+    console.log(name, value, masters);
+    const selectedMaster = masters.find((master: { id: number; name: string }) => master.id == (value));
     console.log(selectedMaster);
     if (name === "mastersource" && selectedMaster) {
       getAttribute(selectedMaster);
     }
-  
 
-  
+
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -119,6 +125,8 @@ const EntityForm = () => {
   const [sectionName, setSectionName] = useState("");
 
   const [showFieldModal, setShowFieldModal] = useState(false);
+  const [ShowaddpartfieldFieldModal, setShowaddpartfieldFieldModal] = useState(false);
+
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [attributes, setAttributes] = useState<{ id: number; label: string }[]>(
     []
@@ -153,12 +161,17 @@ const EntityForm = () => {
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    console.log("event", event);
+    if (itemName == "addpartfield") {
+      setShowaddpartfieldFieldModal(true)
+    } else {
+      setShowFieldModal(true)
+    }
 
-    setShowFieldModal(true)
 
   };
   const [activeSectionId, setActiveSectionId] = useState<null | undefined | number>(sections[0]?.id);
-console.log(activeSectionId);
+  console.log(activeSectionId);
 
   const [attributesofPartialFormData, setAttributesofPartialFormData] = useState<AttributeofPartialFormData[]>([]);
   const getSection = async (sId: React.Key | null | undefined) => {
@@ -196,6 +209,7 @@ console.log(activeSectionId);
 
   const handleCloseFieldModal = () => {
     setShowFieldModal(false)
+    setShowaddpartfieldFieldModal(false)
     setShowDefaultValue(false)
     setShowDependentField(false);
     setFormData({
@@ -240,18 +254,18 @@ console.log(activeSectionId);
 
   const saveField = () => {
     console.log("Saving new field...", formData);
-    if(attributesofPartialFormData.length>0){
+    if (attributesofPartialFormData.length > 0) {
       var maxSortOrder = Math.max(...attributesofPartialFormData.map(item => item.sortOrder));
     }
-    else{
-      maxSortOrder=0;
+    else {
+      maxSortOrder = 0;
     }
 
     setFieldAllAttributes((prevAttributes) => {
       const updatedFieldAllAttributes = [
         ...prevAttributes,
         {
-          id: 0 ,
+          id: 0,
           label: formData.fieldLabel,
           name: formData.fieldName,
           datatype: formData.fieldType,
@@ -261,7 +275,7 @@ console.log(activeSectionId);
           defaultvalue: formData.defaultValue,
           isdependent: formData.isDependent,
           dependentfield: formData.dependentField,
-          sortOrder: maxSortOrder+prevAttributes.length + 1,
+          sortOrder: maxSortOrder + prevAttributes.length + 1,
         },
       ];
       console.log("Saving all attributes...", updatedFieldAllAttributes); // Logs correct updated state
@@ -276,15 +290,109 @@ console.log(activeSectionId);
     });
     handleCloseFieldModal();
   };
+  const [selectedEntity, setSelectedEntity] = useState("");
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [allcolumndata, setallcolumndata] = useState<Record<string, string[]>>({});
+  const handleEntityChange = (e: React.ChangeEvent<any>) => {
+    const { name, value } = e.target;
+    console.log(name, value, masters);
+   // Reset selected checkboxes
+   setSelectedColumns([]);
+    const selectedMaster = masters.find((master: { id: number; name: string }) => master.id == (value));
+    console.log(selectedMaster);
+    if ( selectedMaster) {
+      getAttribute(selectedMaster);
+    }
+    setSelectedEntity(value)
+  };
+
+  const handleColumnChange = (e: any) => {
+    const selectedOptions = Array.from((e.target as HTMLSelectElement).selectedOptions).map(opt => opt.value);
+    setSelectedColumns(selectedOptions);
+  };
+
+  const [allcolumndataWithName, setallcolumndataWithName] = useState<Record<string, string[]>>({});
+  
+  const handleSubmittablecolumn = (e: React.FormEvent) => {
+    e.preventDefault();
+  
+    type Attribute = { id: number; name: string };
+
+    const selectedColumnIds = getAttributeData
+      .filter((attr: Attribute) => selectedColumns.includes(attr.name))
+      .map((attr: Attribute) => attr.id.toString());
+    
+    const selectedColumnNames = getAttributeData
+      .filter((attr: Attribute) => selectedColumns.includes(attr.name))
+      .map((attr: Attribute) => attr.name);
+    
+  
+    // Update ID-based data
+    setallcolumndata(prevData => {
+      const prevColumns = prevData[selectedEntity] || [];
+      const mergedColumns = [...new Set([...prevColumns, ...selectedColumnIds])];
+  
+      const updatedData = {
+        ...prevData,
+        [selectedEntity]: mergedColumns,
+      };
+  
+      console.log("🧠 ID Map Updated:", updatedData);
+      return updatedData;
+    });
+  
+    // Update Name-based data (for view layer)
+    setallcolumndataWithName(prevData => {
+      const prevNames = prevData[selectedEntity] || [];
+      const mergedNames = [...new Set([...prevNames, ...selectedColumnNames])];
+  
+      const updatedNameData = {
+        ...prevData,
+        [selectedEntity]: mergedNames,
+      };
+  
+      console.log("👁️ Name Map Updated:", updatedNameData);
+      return updatedNameData;
+    });
+  
+    setShowaddpartfieldFieldModal(false);
+  };
+  
+  console.log("Submitting data:", allcolumndata);
+  const finalgrid = {
+    id: 0,
+    label: "Part Grid",
+    name: "partGrid",
+    datatype: "grid",
+    mastersource: "",
+    valuefield: "",
+    isrequired: false,
+    defaultvalue: "",
+    isdependent: false,
+    dependentfield: "",
+    sortOrder: 1,
+    gridMaster: {
+      gridElements: Object.entries(allcolumndata).map(([entity, fields]) => ({
+        masterSource: entity,
+        valueField: fields
+      }))
+    }
+  };
+  const updatedformsection = [...fieldAllAttributes, finalgrid];
+console.log(fieldAllAttributes,finalgrid);
+console.log("updated",updatedformsection);
+
 
   const saveForm = async () => {
+   
+    
     const newField = {
       id: String(model.id),
       sId: String(activeSectionId),
       formName: model.name,
-      fieldsData: fieldAllAttributes
+      fieldsData: updatedformsection
     };
-
+    console.log("newField",newField);
     try {
       const response = await fetch("https://localhost:7060/api/employee/submit-form", {
         method: "POST",
@@ -311,8 +419,7 @@ console.log(activeSectionId);
     handleCloseFieldModal();
     console.log("Form cancelled");
   };
-
-
+ 
   return (
     <>
       <div className="container mt-4">
@@ -327,7 +434,7 @@ console.log(activeSectionId);
               <div className="col-md-6">
                 <h4>Draggable Items</h4>
                 <ul className="list-group">
-                  {["String", "Number", "Dropdown"].map((item, index) => (
+                  {["String", "Number", "Dropdown", "addpartfield"].map((item, index) => (
                     <li
                       key={index}
                       className="list-group-item"
@@ -380,6 +487,32 @@ console.log(activeSectionId);
                       </div>
                     </div>
                   ))}
+                  {Object.entries(allcolumndataWithName).map(([entity, columns]) => (
+                    <div key={entity} className="mb-4">
+                      <h5>{entity}</h5>
+                      <table className="table table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Column</th>
+                            <th>Value</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {columns.map(col => (
+                            <tr key={col}>
+                              <td>{col}</td>
+                              <td>
+                                <input type="text" className="form-control" readOnly value="" />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+
+
+
                 </div>
               </div>
               <div className="text-center mt-3">
@@ -431,22 +564,22 @@ console.log(activeSectionId);
             </Form.Group>
             {itemName === "Dropdown" && (
               <>
-               <Form.Group className="mb-2">
-  <Form.Label>Master Source</Form.Label>
-  <select
-    className="form-control"
-    name="mastersource"
-    value={formData.mastersource}
-    onChange={handleInputChange}
-  >
-    <option value="">Select Master...</option> {/* This is your placeholder option */}
-    {masters.map((master: { id: number; name: string }) => (
-      <option key={master.id} value={master.id}>
-        {master.name}
-      </option>
-    ))}
-  </select>
-</Form.Group>
+                <Form.Group className="mb-2">
+                  <Form.Label>Master Source</Form.Label>
+                  <select
+                    className="form-control"
+                    name="mastersource"
+                    value={formData.mastersource}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Select Master...</option> {/* This is your placeholder option */}
+                    {masters.map((master: { id: number; name: string }) => (
+                      <option key={master.id} value={master.id}>
+                        {master.name}
+                      </option>
+                    ))}
+                  </select>
+                </Form.Group>
 
 
 
@@ -458,7 +591,7 @@ console.log(activeSectionId);
                     value={formData.valuefield}
                     onChange={handleInputChange}
                   >
-                     <option value="">Select value....</option>
+                    <option value="">Select value....</option>
                     {getAttributeData.map((attr: { id: number; name: string }) => (
                       <option key={attr.id} value={attr.id}>
                         {attr.name}
@@ -489,7 +622,7 @@ console.log(activeSectionId);
                     value={formData.dependentField}
                     onChange={handleInputChange}
                   >
-                       <option value="">Select dependent value....</option>
+                    <option value="">Select dependent value....</option>
                     {attributesofPartialFormData.map((attr) => (
                       <option key={attr.id} value={attr.id}>
                         {attr.name}
@@ -536,7 +669,64 @@ console.log(activeSectionId);
           <Button variant="success" onClick={saveField}>Save</Button>
         </Modal.Footer>
       </Modal>
+      {/* Add New Field to make table */}
+      <Modal show={ShowaddpartfieldFieldModal} onHide={handleCloseFieldModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Field to make table</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
 
+            <Form.Group className="mb-2">
+              <Form.Label>Master Source</Form.Label>
+              <select
+                className="form-control"
+                name="mastersource"
+                value={selectedEntity}
+                onChange={handleEntityChange}
+              >
+                <option value="">Select Master...</option>
+                {masters.map((master: { id: number; name: string }) => (
+                  <option key={master.id} value={master.id}>
+                    {master.name}
+                  </option>
+                ))}
+              </select>
+            </Form.Group>
+
+            <Form.Group className="mb-2">
+              <Form.Label>Add Column</Form.Label>
+              <div className="border rounded p-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {getAttributeData.map((attr: { id: number; name: string }) => (
+                  <Form.Check
+                    key={attr.id}
+                    type="checkbox"
+                    label={attr.name}
+                    value={attr.name}
+                    checked={selectedColumns.includes(attr.name)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (e.target.checked) {
+                        setSelectedColumns((prev) => [...prev, value]);
+                      } else {
+                        setSelectedColumns((prev) => prev.filter((c) => c !== value));
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </Form.Group>
+
+            {selectedEntity && selectedColumns.length > 0 && (
+              <Modal.Footer>
+                <Button variant="secondary" onClick={handleCloseFieldModal}>Close</Button>
+                <Button variant="success" onClick={handleSubmittablecolumn}>Save</Button>
+              </Modal.Footer>
+            )}
+
+          </Form>
+        </Modal.Body>
+      </Modal>
       {/* Add New Section Modal */}
       <Modal show={showSectionModal} onHide={handleCloseSectionModal}>
         <Modal.Header closeButton>
